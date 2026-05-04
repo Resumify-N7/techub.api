@@ -3,10 +3,12 @@ package com.techub.api.controller;
 import com.techub.api.domain.Student;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
+import com.techub.api.repository.CourseChangeRepository;
 import com.techub.api.service.JwtService;
 import com.techub.api.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -63,5 +65,18 @@ public class StudentController {
     @GetMapping("/loginData/{id}")
     public UserLoginDataDTO obterDadosLogin(@PathVariable Long id){
         return studentService.obter_dados_login(id);
+    }
+
+    @PutMapping("/{id}/trocar-curso")
+    public ResponseEntity<?> trocarCurso(
+            @PathVariable Long id,
+            @RequestParam Long courseId
+    ) {
+        try {
+            studentService.trocarCurso(id, courseId);
+            return ResponseEntity.ok("Curso alterado com sucesso");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

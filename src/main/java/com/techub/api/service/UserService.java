@@ -1,5 +1,6 @@
 package com.techub.api.service;
 
+import com.techub.api.domain.Course;
 import com.techub.api.domain.Role;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.User;
@@ -7,6 +8,7 @@ import com.techub.api.dto.UserCreateStudentRequestDTO;
 import com.techub.api.dto.UserRoleResponse;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.UserRepository;
 import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     public User criarUsuario(User user) {
 
@@ -51,6 +56,12 @@ public class UserService {
         student.setNome(dto.nome());
         student.setBio(dto.bio());
         student.setFoto(dto.foto());
+        student.setSemestre(dto.semestre());
+
+        Course course = courseRepository.findById(dto.cursoId())
+                .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
+
+        student.setCursoAtual(course);
 
         user.setStudent(student);
         user.setRole(Role.ALUNO);
@@ -93,4 +104,5 @@ public class UserService {
         }
         throw new RuntimeException("Não foi possivel encontrar o role");
     }
+
 }

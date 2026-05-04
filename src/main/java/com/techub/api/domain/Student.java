@@ -1,13 +1,17 @@
 package com.techub.api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Table(name = "tb_alunos")
 @Getter
 @Setter
+
 
 public class Student {
 
@@ -26,5 +30,13 @@ public class Student {
     @Column(nullable = true)
     private String foto;
 
+    @ManyToOne
+    @JoinColumn(name = "curso_atual_id")
+    private Course cursoAtual;
+
     private Integer pontuacao = 0;
+
+    @OneToMany(mappedBy = "student")
+    @JsonIgnore
+    private List<Summary> summaries;
 }

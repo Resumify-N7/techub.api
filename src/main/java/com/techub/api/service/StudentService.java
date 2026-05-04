@@ -4,12 +4,15 @@ import com.techub.api.domain.Student;
 import com.techub.api.domain.User;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
+import com.techub.api.repository.CourseChangeRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,6 +22,9 @@ public class StudentService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CourseChangeRepository courseChangeRepository;
 
     public Student buscar_por_id(Long id) {
         return studentRepository.findById(id)
@@ -69,6 +75,22 @@ public class StudentService {
         }
 
         studentRepository.save(student);
+    }
+
+    public void trocarCurso(Long studentId, Long courseId) {
+
+        LocalDateTime inicioMes = LocalDate.now()
+                .withDayOfMonth(1)
+                .atStartOfDay();
+
+        int trocas = courseChangeRepository.countByStudentIdAndDataTrocaAfter(studentId, inicioMes);
+
+        if (trocas >= 6) {
+            throw new RuntimeException("Limite de trocas atingido");
+        }
+
+        // atualiza curso do aluno
+        // salva histórico
     }
 
     public void deletar(Long id){ studentRepository.deleteById(id);  }

@@ -42,9 +42,10 @@ public class SecurityConfig {
                .cors(cors -> {})
                .csrf(csrf -> csrf.disable())
                .authorizeHttpRequests(auth -> auth
+                      // .requestMatchers("/**").permitAll() ///  para testar TEMPORARIO
                        .requestMatchers("/auth/login").permitAll()
-                       .requestMatchers("/resumos/**").permitAll() //para testar os resumos TEMPORARIO
                        .requestMatchers(HttpMethod.POST, "/user").permitAll()
+                       .requestMatchers("/courses/**").permitAll() //cursos add
                        .requestMatchers("/health").permitAll()
                        .requestMatchers("/docs/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                        .anyRequest().authenticated()
