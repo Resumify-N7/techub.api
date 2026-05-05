@@ -1,10 +1,13 @@
 package com.techub.api.service;
 
+import com.techub.api.domain.Course;
+import com.techub.api.domain.CourseChange;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.User;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
 import com.techub.api.repository.CourseChangeRepository;
+import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,9 @@ public class StudentService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     @Autowired
     private CourseChangeRepository courseChangeRepository;
@@ -77,10 +83,12 @@ public class StudentService {
         studentRepository.save(student);
     }
 
+    //mexe aqui isso que ta faltando
     public void trocarCurso(Long studentId, Long courseId) {
 
         LocalDateTime inicioMes = LocalDate.now()
                 .withDayOfMonth(1)
+               // .toLocalDate()
                 .atStartOfDay();
 
         int trocas = courseChangeRepository.countByStudentIdAndDataTrocaAfter(studentId, inicioMes);
@@ -88,10 +96,23 @@ public class StudentService {
         if (trocas >= 6) {
             throw new RuntimeException("Limite de trocas atingido");
         }
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
 
-        // atualiza curso do aluno
-        // salva histórico
+        Course novoCurso = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
+
+        student.setCursoAtual(novoCurso);
+        studentRepository.save(student);
+
+        CourseChange change = new CourseChange();
+        change.setStudent(student);
+        change.setNovoCourse(novoCurso);
+        change.setDataTroca(LocalDateTime.now());
+
+        courseChangeRepository.save(change);
     }
+
 
     public void deletar(Long id){ studentRepository.deleteById(id);  }
 
