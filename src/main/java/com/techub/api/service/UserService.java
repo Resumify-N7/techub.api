@@ -58,11 +58,10 @@ public class UserService {
         student.setFoto(dto.foto());
         student.setSemestre(dto.semestre());
 
-        Course course = courseRepository.findById(dto.cursoId())
-                .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
+        Course course = courseRepository.findTopByOrderByIdAsc()
+                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));
 
         student.setCursoAtual(course);
-
         user.setStudent(student);
         user.setRole(Role.ALUNO);
 

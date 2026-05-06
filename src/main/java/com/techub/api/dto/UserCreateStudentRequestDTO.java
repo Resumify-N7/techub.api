@@ -8,6 +8,5 @@ public record UserCreateStudentRequestDTO(
        @NotBlank String senha,
        Integer semestre,
        String bio,
-       String foto,
-       Long cursoId
+       String foto
 ) {}
