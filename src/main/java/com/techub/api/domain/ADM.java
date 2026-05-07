@@ -14,4 +14,9 @@ public class ADM {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    String username;
+
+    @Column()
+    Boolean ativo = true;
 }

@@ -1,13 +1,12 @@
 package com.techub.api.service;
 
-import com.techub.api.domain.Course;
-import com.techub.api.domain.Role;
-import com.techub.api.domain.Student;
-import com.techub.api.domain.User;
+import com.techub.api.domain.*;
+import com.techub.api.dto.ADMCreateRequestDTO;
 import com.techub.api.dto.UserCreateStudentRequestDTO;
 import com.techub.api.dto.UserRoleResponse;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.repository.ADMRepository;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.UserRepository;
 import jakarta.validation.constraints.Email;
@@ -24,6 +23,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ADMRepository admRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -65,6 +67,22 @@ public class UserService {
         user.setStudent(student);
         user.setRole(Role.ALUNO);
 
+        return criarUsuario(user);
+    }
+
+    @Transactional
+    public User cadastrarADM(ADMCreateRequestDTO dto){
+        User user = new User();
+        user.setEmail(dto.email());
+        user.setSenha(dto.senha());
+
+        ADM adm = new ADM();
+        adm.setUsername(dto.username());
+
+        ADM admSalvo = admRepository.save(adm);
+
+        user.setAdm(admSalvo);
+        user.setRole(Role.ADM);
         return criarUsuario(user);
     }
 

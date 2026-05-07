@@ -35,6 +35,10 @@ public class User implements UserDetails {
     @JoinColumn(name = "student_id", unique = true)
     private Student student;
 
+    @OneToOne
+    @JoinColumn(name = "adm_id")
+    private ADM adm;
+
     @Column(name = "created_at", nullable = true)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;

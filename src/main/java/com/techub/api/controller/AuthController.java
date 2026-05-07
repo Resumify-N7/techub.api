@@ -79,6 +79,6 @@ public class AuthController {
         User user = userService.buscar_por_email(userEmail)
                 .orElseThrow(() -> new RuntimeException("Não foi possivel encotrar email"));
 
-        return ResponseEntity.ok(new AuthResponse(true, user.getId()));
+        return ResponseEntity.ok(new AuthResponse(true, user.getId(), user.getRole()));
     }
 }
