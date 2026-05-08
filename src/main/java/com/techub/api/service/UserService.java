@@ -1,10 +1,7 @@
 package com.techub.api.service;
 
 import com.techub.api.domain.*;
-import com.techub.api.dto.ADMCreateRequestDTO;
-import com.techub.api.dto.UserCreateStudentRequestDTO;
-import com.techub.api.dto.UserRoleResponse;
-import com.techub.api.dto.UserLoginDataDTO;
+import com.techub.api.dto.*;
 import com.techub.api.exception.EmailAlredyExistsExeception;
 import com.techub.api.repository.ADMRepository;
 import com.techub.api.repository.CourseRepository;
@@ -96,8 +93,16 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public List<User> listar() {
-        return userRepository.findAll();
+    public List<UserGetResponseDTO> listar() {
+
+        return userRepository.findAll()
+                .stream()
+                .map(user -> new UserGetResponseDTO(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getCreatedAt()
+                )).toList();
     }
 
     public Optional<User> buscar_por_id(Long id) {

@@ -30,7 +30,7 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> listarUser() {
+    public List<UserGetResponseDTO> listarUser() {
         return userService.listar();
     }
 
