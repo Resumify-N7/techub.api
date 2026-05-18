@@ -18,6 +18,7 @@ public class Summary {
 
     private String titulo;
     private String conteudo;
+    private boolean publico = true;
     private LocalDateTime datahora;
 
     @ManyToOne

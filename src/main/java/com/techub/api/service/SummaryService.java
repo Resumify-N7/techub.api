@@ -78,4 +78,17 @@ public class SummaryService {
         Summary existing = getById(id);
         summaryRepository.delete(existing);
     }
+
+
+    public Summary alternarVisibilidade(Long id, Long studentId) {
+        Summary summary = getById(id);
+
+        if (!summary.getStudent().getId().equals(studentId)) {
+            throw new RuntimeException("Você não tem permissão para alterar este resumo");
+        }
+
+        summary.setPublico(!summary.isPublico());
+
+        return summaryRepository.save(summary);
+    }
 }
