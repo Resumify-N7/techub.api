@@ -62,7 +62,8 @@ public class UserService {
         Course course = courseRepository.findTopByOrderByIdAsc()
                 .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));
 
-        student.setCursoAtual(course);
+        student.setCourse(course);
+
         user.setStudent(student);
         user.setRole(Role.ALUNO);
 

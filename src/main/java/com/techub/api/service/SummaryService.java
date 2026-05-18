@@ -3,23 +3,30 @@ package com.techub.api.service;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.*;
+import com.techub.api.domain.Course;
+import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class SummaryService {
 
     @Autowired
     private SummaryRepository summaryRepository;
+    private final CourseRepository courseRepository;
+    private final StudentRepository studentRepository;
 
-    @Autowired
-    private StudentRepository studentRepository;
+    public SummaryService(SummaryRepository summaryRepository,
+                          CourseRepository courseRepository,
+                          StudentRepository studentRepository) {
+        this.summaryRepository = summaryRepository;
+        this.courseRepository = courseRepository;
+        this.studentRepository = studentRepository;
+    }
 
     public SummaryCreateResponseDTO saveSummary(SummaryCreateRequestDTO dto, Long id) {
 
@@ -42,6 +49,10 @@ public class SummaryService {
         summary.setStudent(studentId);
 
         student.getSummaries().add(summary);
+
+        Course course = courseRepository.findTopByOrderByIdAsc()
+            .orElseThrow(() -> new RuntimeException("Curso DSM não encontrado"));
+        summary.setCourse(course);
 
         try {
             summaryRepository.save(summary);

@@ -14,4 +14,10 @@ public class Followers {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne
+    private Student follower;
+
+    @ManyToOne
+    private Student following;
+
 }
