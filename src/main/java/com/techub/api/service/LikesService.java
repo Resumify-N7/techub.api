@@ -8,6 +8,10 @@ import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 @Service
 public class LikesService {
@@ -55,5 +59,22 @@ public class LikesService {
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
         return likesRepository.countBySummary(summary);
+    }
+
+    public List<Map<String, Object>> getRanking() {
+        // Busca os resumos ordenados por curtidas
+        List<Object[]> resultado = likesRepository.findRanking();
+
+        // Converte para um formato legível na resposta
+        List<Map<String, Object>> ranking = new ArrayList<>();
+
+        for (Object[] linha : resultado) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("resumo", linha[0]);        // o objeto Summary
+            item.put("totalCurtidas", linha[1]); // o total de curtidas
+            ranking.add(item);
+        }
+
+        return ranking;
     }
 }

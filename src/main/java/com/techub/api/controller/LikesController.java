@@ -55,4 +55,13 @@ public class LikesController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // GET /ranking — retorna resumos ordenados pelos mais curtidos
+    @GetMapping("/ranking")
+    public ResponseEntity<?> getRanking() {
+        try {
+            return ResponseEntity.ok(likesService.getRanking());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
