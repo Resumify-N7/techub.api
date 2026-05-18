@@ -14,4 +14,13 @@ public class Likes {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // O aluno que curtiu
+    @ManyToOne
+    @JoinColumn(name = "student_id")
+    private Student student;
+
+    // O resumo que foi curtido
+    @ManyToOne
+    @JoinColumn(name = "summary_id")
+    private Summary summary;
 }
