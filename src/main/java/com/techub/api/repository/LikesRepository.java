@@ -1,0 +1,24 @@
+package com.techub.api.repository;
+
+import com.techub.api.domain.Likes;
+import com.techub.api.domain.Student;
+import com.techub.api.domain.Summary;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import java.util.List;
+
+import java.util.Optional;
+
+public interface LikesRepository extends JpaRepository<Likes, Long> {
+
+    // Verifica se um aluno já curtiu um resumo específico
+    // evita curtidas duplicadas
+    Optional<Likes> findByStudentAndSummary(Student student, Summary summary);
+
+    // Conta quantas curtidas um resumo tem
+    long countBySummary(Summary summary);
+
+    // Retorna os resumos ordenados pelo número de curtidas (do mais curtido para o menos)
+    @Query("SELECT l.summary, COUNT(l) as totalLikes FROM Likes l GROUP BY l.summary ORDER BY totalLikes DESC")
+    List<Object[]> findRanking();
+}

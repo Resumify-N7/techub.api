@@ -41,4 +41,5 @@ public interface SummaryRepository extends JpaRepository<Summary, Long>, JpaSpec
             @Param("semestre")     Integer semestre,
             Pageable pageable
     );
+    List<Summary> findByPublicoTrue();
 }

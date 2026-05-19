@@ -23,5 +23,4 @@ public class Course {
     @ManyToOne
     @JoinColumn(name = "university_id")
     private University university;
-
 }

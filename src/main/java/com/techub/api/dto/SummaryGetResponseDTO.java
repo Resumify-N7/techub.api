@@ -6,5 +6,6 @@ public record SummaryGetResponseDTO(
         String titulo,
         String conteudo,
         Integer reports,
+        Boolean publico,
         Boolean ativo
 ) {}
