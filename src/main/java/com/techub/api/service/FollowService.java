@@ -1,6 +1,5 @@
 package com.techub.api.service;
 
-import com.techub.api.domain.Course;
 import com.techub.api.domain.Followers;
 import com.techub.api.dto.FollowesGetResponseDTO;
 import com.techub.api.domain.Student;
@@ -20,7 +19,6 @@ public class FollowService {
     @Autowired
     private StudentRepository studentRepository;
 
-
     public List<Long> getFollowingUsers(Long studentId) {
 
         List<Followers> follows =
@@ -38,7 +36,6 @@ public class FollowService {
                 followersRepository.findByFollowerId(studentId);
 
         return follows.stream()
-                .filter(follow -> follow.getFollowing().getCourse() != null)
                 .map(follow -> follow.getFollowing().getCourse().getId())
                 .distinct()
                 .toList();
@@ -80,31 +77,30 @@ public class FollowService {
                 .toList();
     }
 
-
     public void follow(Long followerId, Long followingId) {
-            if (followerId.equals(followingId)) {
-                    throw new RuntimeException("Não é possível seguir a si mesmo");
-            }
+        if (followerId.equals(followingId)) {
+            throw new RuntimeException("Não é possível seguir a si mesmo");
+        }
 
-            Student follower = studentRepository.findById(followerId)
-                            .orElseThrow(() -> new RuntimeException("Estudante (follower) não encontrado"));
+        Student follower = studentRepository.findById(followerId)
+                .orElseThrow(() -> new RuntimeException("Estudante (follower) não encontrado"));
 
-            Student following = studentRepository.findById(followingId)
-                            .orElseThrow(() -> new RuntimeException("Estudante (following) não encontrado"));
+        Student following = studentRepository.findById(followingId)
+                .orElseThrow(() -> new RuntimeException("Estudante (following) não encontrado"));
 
-            var existing = followersRepository.findByFollowerIdAndFollowingId(followerId, followingId);
-            if (existing.isPresent()) return;
+        var existing = followersRepository.findByFollowerIdAndFollowingId(followerId, followingId);
+        if (existing.isPresent()) return;
 
-            Followers f = new Followers();
-            f.setFollower(follower);
-            f.setFollowing(following);
-            followersRepository.save(f);
+        Followers f = new Followers();
+        f.setFollower(follower);
+        f.setFollowing(following);
+        followersRepository.save(f);
     }
 
     public void unfollow(Long followerId, Long followingId) {
-            var existing = followersRepository.findByFollowerIdAndFollowingId(followerId, followingId);
-            if (existing.isPresent()) {
-                    followersRepository.delete(existing.get());
-            }
+        var existing = followersRepository.findByFollowerIdAndFollowingId(followerId, followingId);
+        if (existing.isPresent()) {
+            followersRepository.delete(existing.get());
+        }
     }
 }

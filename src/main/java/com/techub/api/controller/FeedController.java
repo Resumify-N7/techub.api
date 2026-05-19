@@ -13,6 +13,7 @@ public class FeedController {
     @Autowired
     private FeedService feedService;
 
+
     @GetMapping("/{studentId}")
     public ResponseEntity<FeedDTO> getFeed(
 

@@ -21,6 +21,8 @@ public class Summary {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String conteudo;
+
+    @Column
     private LocalDateTime datahora;
 
     @Column
@@ -28,6 +30,9 @@ public class Summary {
 
     @Column
     private Boolean ativo = true;
+
+    @Column
+    private Boolean publico = true;
 
     @ManyToOne
     @JoinColumn(name = "student_id")

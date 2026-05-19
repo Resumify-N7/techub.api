@@ -1,11 +1,9 @@
 package com.techub.api.controller;
 
 import com.techub.api.domain.Student;
-import com.techub.api.domain.Summary;
 import com.techub.api.dto.SummaryCreateRequestDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
 import com.techub.api.dto.SummaryUpdateRequestDTO;
-import com.techub.api.dto.UserGetResponseDTO;
 import com.techub.api.service.JwtService;
 import com.techub.api.service.StudentService;
 import com.techub.api.service.SummaryService;
@@ -14,10 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.function.EntityResponse;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/resumos")
@@ -92,5 +88,25 @@ public class SummaryController {
     public ResponseEntity<?> deletar(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok("Sucesso ao criar ao apagar Resumo");
+    }
+
+    @PatchMapping("/{summaryId}/visibilidade")
+    public ResponseEntity<?> alternarVisibilidade(
+            @CookieValue(name = "accessToken", required = false) String token,
+            @PathVariable Long summaryId) {
+
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).body("Token ausente");
+        }
+
+        String email = jwtService.extractEmail(token);
+        var student = studentService.buscar_perfilEmail(email);
+
+        try {
+            service.alternarVisibilidade(summaryId, student.getId());
+            return ResponseEntity.ok("Sucesso ao alterar visibilidade. Resumo:" + summaryId + "Student: " + student.getId());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

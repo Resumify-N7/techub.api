@@ -71,6 +71,7 @@ public class SummaryService {
                     summary.getTitulo(),
                     summary.getConteudo(),
                     summary.getReports(),
+                    summary.getPublico(),
                     summary.getAtivo()
                 ))
                 .toList();
@@ -80,12 +81,15 @@ public class SummaryService {
 
         return summaryRepository.findByAtivoTrue()
                 .stream()
-                .map(summary -> new SummaryGetResponseDTO(
+                .filter(summary -> summary.getPublico() == true)
+                .map(summary ->
+                        new SummaryGetResponseDTO(
                         summary.getStudent().getId(),
                         summary.getId(),
                         summary.getTitulo(),
                         summary.getConteudo(),
                         summary.getReports(),
+                        summary.getPublico(),
                         summary.getAtivo()
                 ))
                 .toList();
@@ -101,6 +105,7 @@ public class SummaryService {
                         summary.getTitulo(),
                         summary.getConteudo(),
                         summary.getReports(),
+                        summary.getPublico(),
                         summary.getAtivo()
                 ))
                 .toList();
@@ -109,7 +114,7 @@ public class SummaryService {
     public SummaryGetResponseDTO getById(Long id) {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
-        return new SummaryGetResponseDTO(summary.getStudent().getId(), summary.getId(),  summary.getTitulo(), summary.getConteudo(), summary.getReports(),  summary.getAtivo());
+        return new SummaryGetResponseDTO(summary.getStudent().getId(), summary.getId(),  summary.getTitulo(), summary.getConteudo(), summary.getReports(), summary.getPublico(),  summary.getAtivo());
     }
 
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {
@@ -120,7 +125,7 @@ public class SummaryService {
         existing.setConteudo(dto.conteudo());
 
         summaryRepository.save(existing);
-        return new SummaryGetResponseDTO(existing.getStudent().getId(), existing.getId(), existing.getTitulo(), existing.getConteudo(), existing.getReports(),  existing.getAtivo());
+        return new SummaryGetResponseDTO(existing.getStudent().getId(), existing.getId(), existing.getTitulo(), existing.getConteudo(), existing.getReports(), existing.getPublico(), existing.getAtivo());
     }
 
     public void reportar(Long id){
@@ -144,5 +149,18 @@ public class SummaryService {
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
         summaryRepository.delete(existing);
+    }
+
+    public void alternarVisibilidade(Long summaryId, Long studentId) {
+        Summary summary = summaryRepository.findById(summaryId)
+                .orElseThrow(() -> new RuntimeException("Erro ao procurar resumo!"));
+
+        if (!summary.getStudent().getId().equals(studentId)) {
+            throw new RuntimeException("Você não tem permissão para alterar este resumo");
+        }
+
+        summary.setPublico(!summary.getPublico());
+
+        summaryRepository.save(summary);
     }
 }

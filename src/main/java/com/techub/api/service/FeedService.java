@@ -30,7 +30,6 @@ public class FeedService {
             List<Long> followingUsers = followService.getFollowingUsers(studentId);
             List<Long> followingCourses = followService.getFollowingCourses(studentId);
 
-
             // 2. Evita erro com lista vazia
             if (followingUsers.isEmpty() && followingCourses.isEmpty()) {
                 return new FeedDTO(List.of(), page, size, 0);
