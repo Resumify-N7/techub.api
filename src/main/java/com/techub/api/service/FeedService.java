@@ -26,25 +26,21 @@ public class FeedService {
 
         public FeedDTO getFeed(Long studentId, int page, int size) {
 
-            // 1. Quem o usuário segue
             List<Long> followingUsers = followService.getFollowingUsers(studentId);
             List<Long> followingCourses = followService.getFollowingCourses(studentId);
 
-            // 2. Evita erro com lista vazia
             if (followingUsers.isEmpty() && followingCourses.isEmpty()) {
                 return new FeedDTO(List.of(), page, size, 0);
             }
 
             Pageable pageable = PageRequest.of(page, size);
 
-            // 3. Busca no banco
             Page<Summary> summaries = summaryRepository.findFeedSummaries(
                     followingUsers,
                     followingCourses,
                     pageable
             );
 
-            // 4. Retorna DTO
             return new FeedDTO(
                     summaries.getContent(),
                     summaries.getNumber(),

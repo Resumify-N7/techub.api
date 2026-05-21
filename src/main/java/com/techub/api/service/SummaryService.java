@@ -1,10 +1,12 @@
 package com.techub.api.service;
 
+import com.techub.api.domain.Report;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.*;
 import com.techub.api.domain.Course;
 import com.techub.api.repository.CourseRepository;
+import com.techub.api.repository.ReportRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,10 @@ public class SummaryService {
 
     @Autowired
     private SummaryRepository summaryRepository;
+    @Autowired
+    private LikesService likesService;
+    @Autowired
+    private ReportRepository reportRepository;
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
 
@@ -48,6 +54,9 @@ public class SummaryService {
         summary.setConteudo(dto.conteudo());
         summary.setStudent(studentId);
 
+        if (student.getSummaries() == null) {
+            student.setSummaries(new java.util.ArrayList<>());
+        }
         student.getSummaries().add(summary);
 
         Course course = courseRepository.findTopByOrderByIdAsc()
@@ -62,18 +71,31 @@ public class SummaryService {
         }
     }
 
+    private SummaryGetResponseDTO toResponse(Summary summary, boolean includeLikes) {
+        Long totalCurtidas = null;
+
+        Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
+
+        if (includeLikes && Boolean.TRUE.equals(summary.getAtivo()) && Boolean.TRUE.equals(summary.getPublico())) {
+            totalCurtidas = likesService.contarCurtidas(summary);
+        }
+
+        return new SummaryGetResponseDTO(
+                summary.getStudent().getId(),
+                summary.getId(),
+                summary.getTitulo(),
+                summary.getConteudo(),
+                totalReports,
+                summary.getPublico(),
+                summary.getAtivo(),
+                totalCurtidas
+        );
+    }
+
     public List<SummaryGetResponseDTO> getAll() {
         return summaryRepository.findAll()
                 .stream()
-                .map(summary -> new SummaryGetResponseDTO(
-                    summary.getStudent().getId(),
-                    summary.getId(),
-                    summary.getTitulo(),
-                    summary.getConteudo(),
-                    summary.getReports(),
-                    summary.getPublico(),
-                    summary.getAtivo()
-                ))
+                .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
@@ -82,16 +104,7 @@ public class SummaryService {
         return summaryRepository.findByAtivoTrue()
                 .stream()
                 .filter(summary -> summary.getPublico() == true)
-                .map(summary ->
-                        new SummaryGetResponseDTO(
-                        summary.getStudent().getId(),
-                        summary.getId(),
-                        summary.getTitulo(),
-                        summary.getConteudo(),
-                        summary.getReports(),
-                        summary.getPublico(),
-                        summary.getAtivo()
-                ))
+            .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
@@ -99,22 +112,14 @@ public class SummaryService {
 
         return summaryRepository.findByAtivoFalse()
                 .stream()
-                .map(summary -> new SummaryGetResponseDTO(
-                        summary.getStudent().getId(),
-                        summary.getId(),
-                        summary.getTitulo(),
-                        summary.getConteudo(),
-                        summary.getReports(),
-                        summary.getPublico(),
-                        summary.getAtivo()
-                ))
+            .map(summary -> toResponse(summary, false))
                 .toList();
     }
 
     public SummaryGetResponseDTO getById(Long id) {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
-        return new SummaryGetResponseDTO(summary.getStudent().getId(), summary.getId(),  summary.getTitulo(), summary.getConteudo(), summary.getReports(), summary.getPublico(),  summary.getAtivo());
+        return toResponse(summary, true);
     }
 
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {
@@ -125,15 +130,27 @@ public class SummaryService {
         existing.setConteudo(dto.conteudo());
 
         summaryRepository.save(existing);
-        return new SummaryGetResponseDTO(existing.getStudent().getId(), existing.getId(), existing.getTitulo(), existing.getConteudo(), existing.getReports(), existing.getPublico(), existing.getAtivo());
+        return toResponse(existing, true);
     }
 
-    public void reportar(Long id){
+    public void reportar(Long id, Long studentId){
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Não foi possivel encontrar o resumo!"));
 
-        summary.setReports(summary.getReports() + 1);
-        summaryRepository.save((summary));
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
+
+        if (reportRepository.existsByStudentAndSummary(student, summary)) {
+            throw new RuntimeException("Você já reportou este resumo");
+        }
+
+        Report report = new Report();
+        report.setStudent(student);
+        report.setSummary(summary);
+        report.setReportado(true);
+
+        reportRepository.save(report);
+
     }
 
     public void atualizar_status(Long id){
@@ -148,6 +165,7 @@ public class SummaryService {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
+        reportRepository.deleteBySummary(existing);
         summaryRepository.delete(existing);
     }
 
