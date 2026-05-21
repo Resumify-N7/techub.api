@@ -7,5 +7,6 @@ public record SummaryGetResponseDTO(
         String conteudo,
         Integer reports,
         Boolean publico,
-        Boolean ativo
+        Boolean ativo,
+        Long totalCurtidas
 ) {}

@@ -79,9 +79,23 @@ public class SummaryController {
         return ResponseEntity.ok("Sucesso ao atualizar o status do Resumo");
     }
     @PatchMapping("/reportar/{id}")
-    public ResponseEntity<?> reportar(@PathVariable Long id) {
-        service.reportar(id);
-        return ResponseEntity.ok("Sucesso ao reportar o Resumo");
+    public ResponseEntity<?> reportar(
+            @CookieValue(name = "accessToken", required = false) String token,
+            @PathVariable Long id) {
+
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).body("Token ausente");
+        }
+
+        String email = jwtService.extractEmail(token);
+        var student = studentService.buscar_perfilEmail(email);
+
+        try {
+            service.reportar(id, student.getId());
+            return ResponseEntity.ok("Sucesso ao reportar o Resumo");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

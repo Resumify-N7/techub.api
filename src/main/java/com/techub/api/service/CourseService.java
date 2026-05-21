@@ -14,7 +14,11 @@ public class CourseService {
     private CourseRepository courseRepository;
 
     public Course criar(Course course) {
-        return courseRepository.save(course);
+        if(!courseRepository.existsByNameIgnoreCase(course.getName())){
+            return courseRepository.save(course);
+        }
+
+        throw new RuntimeException(("Nome de curso já usado"));
     }
 
     public List<Course> listar() {

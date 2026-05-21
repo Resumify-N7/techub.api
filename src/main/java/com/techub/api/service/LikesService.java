@@ -61,6 +61,10 @@ public class LikesService {
         return likesRepository.countBySummary(summary);
     }
 
+    public long contarCurtidas(Summary summary) {
+        return likesRepository.countBySummary(summary);
+    }
+
     public List<Map<String, Object>> getRanking() {
         // Busca os resumos ordenados por curtidas
         List<Object[]> resultado = likesRepository.findRanking();
