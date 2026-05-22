@@ -30,6 +30,9 @@ public class UserService {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private AvatarService avatarService;
+
     public User criarUsuario(User user) {
 
         user.setAtivo(true);
@@ -56,8 +59,13 @@ public class UserService {
         Student student = new Student();
         student.setNome(dto.nome());
         student.setBio(dto.bio());
-        student.setFoto(dto.foto());
         student.setSemestre(dto.semestre());
+
+        if (dto.avatarUrl() != null && !dto.avatarUrl().isBlank()) {
+            student.setAvatar(avatarService.buscarPorUrl(dto.avatarUrl()));
+        } else {
+            student.setAvatar(avatarService.getOrCreateDefault());
+        }
 
         Course course = courseRepository.findTopByOrderByIdAsc()
                 .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));

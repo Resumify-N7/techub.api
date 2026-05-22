@@ -13,10 +13,12 @@ import com.techub.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class StudentService {
@@ -32,6 +34,9 @@ public class StudentService {
     @Autowired
     private CourseChangeRepository courseChangeRepository;
 
+    @Autowired
+    private AvatarService avatarService;
+
     public Student buscar_por_id(Long id) {
         return studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
@@ -41,19 +46,40 @@ public class StudentService {
 
     public List<Student> listar() { return studentRepository.findAll(); }
 
-    public Student buscar_perfilId(Long id) { return studentRepository.findById(id).orElseThrow(() -> new RuntimeException(("Erro ao buscar usuario"))); }
+    public Student buscar_perfilId(Long id) {
+        Optional<Student> studentOpt = studentRepository.findById(id);
+        if (studentOpt.isPresent()) {
+            return studentOpt.get();
+        }
 
-    public Student buscar_perfilEmail(String email) {
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND,
                         "Usuário não encontrado"
                 ));
 
         Student student = user.getStudent();
         if (student == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.NOT_FOUND,
+                    "Perfil de estudante não vinculado ao usuário"
+            );
+        }
+
+        return student;
+    }
+
+    public Student buscar_perfilEmail(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Usuário não encontrado"
+                ));
+
+        Student student = user.getStudent();
+        if (student == null) {
+            throw new ResponseStatusException(
                     org.springframework.http.HttpStatus.NOT_FOUND,
                     "Perfil de estudante não vinculado ao usuário"
             );
@@ -76,8 +102,8 @@ public class StudentService {
         if (dto.bio() != null) {
             student.setBio(dto.bio());
         }
-        if (dto.foto() != null) {
-            student.setFoto(dto.foto());
+        if (dto.avatarUrl() != null && !dto.avatarUrl().isBlank()) {
+            student.setAvatar(avatarService.buscarPorUrl(dto.avatarUrl()));
         }
 
         studentRepository.save(student);

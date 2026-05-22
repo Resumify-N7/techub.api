@@ -28,8 +28,9 @@ public class Student {
     @Column(nullable = true)
     private String bio;
 
-    @Column(nullable = true)
-    private String foto;
+    @ManyToOne
+    @JoinColumn(name = "avatar_id")
+    private Avatar avatar;
 
     @ManyToOne
     @JoinColumn(name = "curso_atual_id")
