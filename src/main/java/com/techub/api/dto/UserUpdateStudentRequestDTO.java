@@ -6,5 +6,5 @@ public record UserUpdateStudentRequestDTO(
        String nome,
        Integer semestre,
        String bio,
-       String foto
+       String avatarUrl
 ) {}

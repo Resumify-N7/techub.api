@@ -44,6 +44,7 @@ public class SecurityConfig {
                .authorizeHttpRequests(auth -> auth
                       // .requestMatchers("/**").permitAll() ///  para testar TEMPORARIO
                        .requestMatchers("/auth/login").permitAll()
+                       .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
                        .requestMatchers(HttpMethod.POST, "/user").permitAll()
                        .requestMatchers("/courses/**").permitAll() //cursos add
                        .requestMatchers("/health").permitAll()
