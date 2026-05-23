@@ -13,6 +13,8 @@ import java.util.List;
 public interface SummaryRepository extends JpaRepository<Summary, Long>, JpaSpecificationExecutor<Summary> {
     List<Summary> findByAtivoTrue();
     List<Summary> findByAtivoFalse();
+    List<Summary> findByStudentId(Long studentId);
+
 
     @Query("""
         SELECT s FROM Summary s
