@@ -1,16 +1,11 @@
 package com.techub.api.service;
 
-import com.techub.api.domain.Report;
-import com.techub.api.domain.Student;
-import com.techub.api.domain.Summary;
+import com.techub.api.domain.*;
 import com.techub.api.dto.*;
-import com.techub.api.domain.Course;
-import com.techub.api.repository.CourseRepository;
-import com.techub.api.repository.ReportRepository;
-import com.techub.api.repository.StudentRepository;
-import com.techub.api.repository.SummaryRepository;
+import com.techub.api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -23,12 +18,18 @@ public class SummaryService {
     private LikesService likesService;
     @Autowired
     private ReportRepository reportRepository;
+    @Autowired
     private final CourseRepository courseRepository;
+    @Autowired
     private final StudentRepository studentRepository;
+    @Autowired
+    private final UserRepository userRepository;
 
     public SummaryService(SummaryRepository summaryRepository,
                           CourseRepository courseRepository,
-                          StudentRepository studentRepository) {
+                          StudentRepository studentRepository,
+                          UserRepository userRepository) {
+        this.userRepository = userRepository;
         this.summaryRepository = summaryRepository;
         this.courseRepository = courseRepository;
         this.studentRepository = studentRepository;
@@ -120,6 +121,32 @@ public class SummaryService {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
         return toResponse(summary, true);
+    }
+
+    public List<SummaryGetResponseDTO> getStudentSummary(Long id){
+        Student student = studentRepository.findById(id)
+                .orElseGet(() -> {
+                    User user = userRepository.findById(id)
+                            .orElseThrow(() -> new ResponseStatusException(
+                                    org.springframework.http.HttpStatus.NOT_FOUND,
+                                    "Usuário não encontrado"
+                            ));
+
+                    Student linkedStudent = user.getStudent();
+                    if (linkedStudent == null) {
+                        throw new ResponseStatusException(
+                                org.springframework.http.HttpStatus.NOT_FOUND,
+                                "Perfil de estudante não vinculado ao usuário"
+                        );
+                    }
+
+                    return linkedStudent;
+                });
+
+        return summaryRepository.findByStudentId(student.getId())
+                .stream()
+                .map(summary -> toResponse(summary, true))
+                .toList();
     }
 
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {

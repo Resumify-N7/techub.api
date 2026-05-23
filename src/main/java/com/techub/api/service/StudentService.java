@@ -91,7 +91,23 @@ public class StudentService {
     @Transactional
     public void atualizar_perfil(Long id, UserUpdateStudentRequestDTO dto) {
         Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
+                .orElseGet(() -> {
+                    User user = userRepository.findById(id)
+                            .orElseThrow(() -> new ResponseStatusException(
+                                    org.springframework.http.HttpStatus.NOT_FOUND,
+                                    "Usuário não encontrado"
+                            ));
+
+                    Student linkedStudent = user.getStudent();
+                    if (linkedStudent == null) {
+                        throw new ResponseStatusException(
+                                org.springframework.http.HttpStatus.NOT_FOUND,
+                                "Perfil de estudante não vinculado ao usuário"
+                        );
+                    }
+
+                    return linkedStudent;
+                });
 
         if (dto.nome() != null) {
             student.setNome(dto.nome());
@@ -108,6 +124,7 @@ public class StudentService {
 
         studentRepository.save(student);
     }
+
 
     //mexe aqui isso que ta faltando
     public void trocarCurso(Long studentId, Long courseId) {

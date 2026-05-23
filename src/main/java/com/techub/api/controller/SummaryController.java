@@ -55,7 +55,23 @@ public class SummaryController {
 
     @GetMapping("/ativos")
     public List<SummaryGetResponseDTO> listarResumosAtivados() {
-        return service.findByAtivoTrue()    ;
+        return service.findByAtivoTrue();
+    }
+
+    @GetMapping("/me")
+    public List<SummaryGetResponseDTO> getStudentSummary(@CookieValue(name = "accessToken", required = false) String token) {
+        if(token == null || token.isBlank()) {
+            throw  new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Token ausente"
+            );
+        }
+
+        String email = jwtService.extractEmail(token);
+
+        Student student = studentService.buscar_perfilEmail(email);
+
+        return service.getStudentSummary(student.getId());
     }
 
     @GetMapping("/desativados")
