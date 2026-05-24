@@ -21,7 +21,7 @@ public class CourseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Course>> listar() {
-        return ResponseEntity.ok(courseService.listar());
+    public ResponseEntity<List<Course>> listar(@RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(courseService.listar(limit));
     }
 }

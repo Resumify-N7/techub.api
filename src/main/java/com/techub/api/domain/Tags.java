@@ -8,7 +8,7 @@ import lombok.Setter;
 @Table(name = "tb_tags")
 @Getter
 @Setter
-public class Tags {
+public class Tags extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

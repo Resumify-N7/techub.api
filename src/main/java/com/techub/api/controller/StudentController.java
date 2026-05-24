@@ -4,8 +4,7 @@ import com.techub.api.domain.Student;
 import com.techub.api.dto.CourseChangeDTO;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
-import com.techub.api.repository.CourseChangeRepository;
-import com.techub.api.service.JwtService;
+import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +23,7 @@ public class StudentController {
     private StudentService studentService;
 
     @Autowired
-    private JwtService jwtService;
+    private CurrentUserService currentUserService;
 
     @GetMapping("/pontuacao/{id}")
     public Integer obterPontuacao(@PathVariable Long id){ return studentService.obter_pontuacao(id); }
@@ -36,30 +35,21 @@ public class StudentController {
     }
 
     @GetMapping
-    public List<Student> listarAlunos(){
-        return studentService.listar();
+    public List<Student> listarAlunos(@RequestParam(defaultValue = "20") int limit){
+        return studentService.listar(limit);
     }
 
     @GetMapping("/{id}")
     public Student busarPerfilId(@PathVariable Long id) { return studentService.buscar_perfilId(id); }
 
     @GetMapping("/me")
-    public Student busarPerfilToken(@CookieValue(name = "accessToken", required = false) String token) {
-        if(token == null || token.isBlank()) {
-            throw  new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Token ausente"
-            );
-        }
-
-        String email = jwtService.extractEmail(token);
-
-        return studentService.buscar_perfilEmail(email);
+    public Student busarPerfilToken() {
+        return currentUserService.getCurrentStudent();
     }
 
     @PatchMapping("/{id}")
     public String atualizar_status_student(@PathVariable Long id){
-        studentService.deletar(id);
+        studentService.atualizar_status(id);
         return "Status do Aluno alterado com sucesso!";
     }
 

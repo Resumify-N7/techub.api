@@ -19,7 +19,7 @@ import lombok.Setter;
 )
 @Getter
 @Setter
-public class Report {
+public class Report extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

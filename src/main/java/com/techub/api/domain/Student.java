@@ -12,9 +12,7 @@ import java.util.List;
 @Table(name = "tb_alunos")
 @Getter
 @Setter
-
-
-public class Student {
+public class Student extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

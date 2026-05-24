@@ -13,7 +13,7 @@ import lombok.Setter;
 @Table(name = "tb_bios")
 @Getter
 @Setter
-public class Bio {
+public class Bio extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
