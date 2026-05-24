@@ -3,13 +3,12 @@ package com.techub.api.repository;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 import java.util.Optional;
 
-public interface LikesRepository extends JpaRepository<Likes, Long> {
+public interface LikesRepository extends SoftDeleteRepository<Likes, Long> {
 
     // Verifica se um aluno já curtiu um resumo específico
     // evita curtidas duplicadas

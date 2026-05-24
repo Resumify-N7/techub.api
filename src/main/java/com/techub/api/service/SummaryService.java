@@ -4,6 +4,7 @@ import com.techub.api.domain.*;
 import com.techub.api.dto.*;
 import com.techub.api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,16 +24,16 @@ public class SummaryService {
     @Autowired
     private final StudentRepository studentRepository;
     @Autowired
-    private final UserRepository userRepository;
+    private final StudentService studentService;
 
     public SummaryService(SummaryRepository summaryRepository,
                           CourseRepository courseRepository,
                           StudentRepository studentRepository,
-                          UserRepository userRepository) {
-        this.userRepository = userRepository;
+                          StudentService studentService) {
         this.summaryRepository = summaryRepository;
         this.courseRepository = courseRepository;
         this.studentRepository = studentRepository;
+        this.studentService = studentService;
     }
 
     public SummaryCreateResponseDTO saveSummary(SummaryCreateRequestDTO dto, Long id) {
@@ -45,20 +46,12 @@ public class SummaryService {
             throw new IllegalArgumentException("Conteudo é obrigatório");
         }
 
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Estudante não encontrado!"));
-
-        Student studentId = studentRepository.getReferenceById(student.getId());
+        Student student = studentService.resolveStudentByIdOrUserId(id);
 
         Summary summary = new Summary();
         summary.setTitulo(dto.titulo());
         summary.setConteudo(dto.conteudo());
-        summary.setStudent(studentId);
-
-        if (student.getSummaries() == null) {
-            student.setSummaries(new java.util.ArrayList<>());
-        }
-        student.getSummaries().add(summary);
+        summary.setStudent(student);
 
         Course course = courseRepository.findTopByOrderByIdAsc()
             .orElseThrow(() -> new RuntimeException("Curso DSM não encontrado"));
@@ -66,7 +59,7 @@ public class SummaryService {
 
         try {
             summaryRepository.save(summary);
-            return new SummaryCreateResponseDTO(studentId.getId(), summary.getTitulo(), summary.getConteudo());
+            return new SummaryCreateResponseDTO(student.getId(), summary.getTitulo(), summary.getConteudo());
         } catch (Exception e) {
             throw new RuntimeException("Erro ao salvar resumo");
         }
@@ -93,25 +86,30 @@ public class SummaryService {
         );
     }
 
-    public List<SummaryGetResponseDTO> getAll() {
-        return summaryRepository.findAll()
+    public List<SummaryGetResponseDTO> getAll(int limit) {
+        int pageSize = Math.max(1, limit);
+
+        return summaryRepository.findActive(PageRequest.of(0, pageSize))
+                .getContent()
                 .stream()
                 .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
-    public List<SummaryGetResponseDTO> findByAtivoTrue() {
+    public List<SummaryGetResponseDTO> findByAtivoTrue(int limit) {
+        int pageSize = Math.max(1, limit);
 
-        return summaryRepository.findByAtivoTrue()
+        return summaryRepository.findActive(PageRequest.of(0, pageSize))
                 .stream()
                 .filter(summary -> summary.getPublico() == true)
             .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
-    public List<SummaryGetResponseDTO> findByAtivoFalse() {
+    public List<SummaryGetResponseDTO> findByAtivoFalse(int limit) {
+        int pageSize = Math.max(1, limit);
 
-        return summaryRepository.findByAtivoFalse()
+        return summaryRepository.findInactive(PageRequest.of(0, pageSize))
                 .stream()
             .map(summary -> toResponse(summary, false))
                 .toList();
@@ -123,27 +121,13 @@ public class SummaryService {
         return toResponse(summary, true);
     }
 
-    public List<SummaryGetResponseDTO> getStudentSummary(Long id){
-        Student student = studentRepository.findById(id)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(id)
-                            .orElseThrow(() -> new ResponseStatusException(
-                                    org.springframework.http.HttpStatus.NOT_FOUND,
-                                    "Usuário não encontrado"
-                            ));
+        public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
+            Student student = studentService.resolveStudentByIdOrUserId(id);
 
-                    Student linkedStudent = user.getStudent();
-                    if (linkedStudent == null) {
-                        throw new ResponseStatusException(
-                                org.springframework.http.HttpStatus.NOT_FOUND,
-                                "Perfil de estudante não vinculado ao usuário"
-                        );
-                    }
+        int pageSize = Math.max(1, limit);
 
-                    return linkedStudent;
-                });
-
-        return summaryRepository.findByStudentId(student.getId())
+        return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
+            .getContent()
                 .stream()
                 .map(summary -> toResponse(summary, true))
                 .toList();
@@ -192,8 +176,8 @@ public class SummaryService {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        reportRepository.deleteBySummary(existing);
-        summaryRepository.delete(existing);
+        existing.setAtivo(false);
+        summaryRepository.save(existing);
     }
 
     public void alternarVisibilidade(Long summaryId, Long studentId) {

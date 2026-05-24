@@ -8,7 +8,7 @@ import lombok.Setter;
 @Table(name = "tb_curtidas")
 @Getter
 @Setter
-public class Likes {
+public class Likes extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

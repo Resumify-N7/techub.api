@@ -8,7 +8,7 @@ import lombok.Setter;
 @Table(name = "tb_adms")
 @Getter
 @Setter
-public class ADM {
+public class ADM extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,6 +17,4 @@ public class ADM {
     @Column(nullable = false)
     String username;
 
-    @Column()
-    Boolean ativo = true;
 }

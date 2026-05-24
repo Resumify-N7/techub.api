@@ -6,6 +6,7 @@ import com.techub.api.domain.Student;
 import com.techub.api.repository.FollowersRepository;
 import com.techub.api.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,9 +42,11 @@ public class FollowService {
                 .toList();
     }
 
-    public List<FollowesGetResponseDTO> getFollowingDetails(Long studentId) {
-        List<Followers> follows =
-                followersRepository.findByFollowerId(studentId);
+        public List<FollowesGetResponseDTO> getFollowingDetails(Long studentId, int limit) {
+                int pageSize = Math.max(1, limit);
+
+                List<Followers> follows =
+                                followersRepository.findByFollowerId(studentId, PageRequest.of(0, pageSize)).getContent();
 
         return follows.stream()
                 .map(follow -> {
@@ -59,9 +62,11 @@ public class FollowService {
                 .toList();
     }
 
-    public List<FollowesGetResponseDTO> getFollowersDetails(Long studentId) {
-        List<Followers> follows =
-                followersRepository.findByFollowingId(studentId);
+        public List<FollowesGetResponseDTO> getFollowersDetails(Long studentId, int limit) {
+                int pageSize = Math.max(1, limit);
+
+                List<Followers> follows =
+                                followersRepository.findByFollowingId(studentId, PageRequest.of(0, pageSize)).getContent();
 
         return follows.stream()
                 .map(follow -> {

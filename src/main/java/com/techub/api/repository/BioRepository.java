@@ -1,12 +1,11 @@
 package com.techub.api.repository;
 
 import com.techub.api.domain.Bio;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface BioRepository extends JpaRepository<Bio, Long> {
+public interface BioRepository extends SoftDeleteRepository<Bio, Long> {
 
     List<Bio> findAllByOrderByIdAsc();
 

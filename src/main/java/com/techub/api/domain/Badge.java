@@ -8,7 +8,7 @@ import lombok.Setter;
 @Table(name = "tb_selos")
 @Getter
 @Setter
-public class Badge {
+public class Badge extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
