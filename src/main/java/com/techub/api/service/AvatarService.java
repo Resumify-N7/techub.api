@@ -2,6 +2,8 @@ package com.techub.api.service;
 
 import com.techub.api.domain.Avatar;
 import com.techub.api.repository.AvatarRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,14 +17,16 @@ public class AvatarService {
         this.avatarRepository = avatarRepository;
     }
 
-    public List<Avatar> listar(Boolean male) {
+    public List<Avatar> listar(Boolean male, int limit) {
+        int pageSize = Math.max(1, limit);
+
         if (male == null) {
-            return avatarRepository.findAllByOrderByIdAsc();
+            return avatarRepository.findActive(PageRequest.of(0, pageSize, Sort.by(Sort.Direction.ASC, "id"))).getContent();
         }
 
         return male
-                ? avatarRepository.findByMaleTrueOrderByIdAsc()
-                : avatarRepository.findByMaleFalseOrderByIdAsc();
+                ? avatarRepository.findByMaleTrueAndAtivoTrue(PageRequest.of(0, pageSize, Sort.by(Sort.Direction.ASC, "id"))).getContent()
+                : avatarRepository.findByMaleFalseAndAtivoTrue(PageRequest.of(0, pageSize, Sort.by(Sort.Direction.ASC, "id"))).getContent();
     }
 
     public Avatar buscarPorId(Long id) {

@@ -15,7 +15,7 @@ import java.util.List;
 @Table(name = "tb_usuarios")
 @Getter
 @Setter
-public class User implements UserDetails {
+public class User extends BaseEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,9 +26,6 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String senha;
-
-    @Column
-    private Boolean ativo = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -81,6 +78,11 @@ public class User implements UserDetails {
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return Boolean.TRUE.equals(getAtivo());
     }
 
 }

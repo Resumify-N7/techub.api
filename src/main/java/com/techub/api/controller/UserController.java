@@ -33,13 +33,13 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserGetResponseDTO> listarUser() {
-        return userService.findByAtivoTrue();
+    public List<UserGetResponseDTO> listarUser(@RequestParam(defaultValue = "20") int limit) {
+        return userService.findByAtivoTrue(limit);
     }
 
     @GetMapping("/desativados")
-    public List<UserGetResponseDTO> listarUserDesativados() {
-        return userService.findByAtivoFalse();
+    public List<UserGetResponseDTO> listarUserDesativados(@RequestParam(defaultValue = "20") int limit) {
+        return userService.findByAtivoFalse(limit);
     }
 
     //localhost:8080/api/usuarios/3

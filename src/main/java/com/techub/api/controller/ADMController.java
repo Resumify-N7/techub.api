@@ -19,7 +19,7 @@ public class ADMController {
     private ADMService admService;
 
     @GetMapping
-    public List<ADM> listar(){
-        return admService.listar_adm();
+    public List<ADM> listar(@RequestParam(defaultValue = "20") int limit){
+        return admService.listar_adm(limit);
     }
 }

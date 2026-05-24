@@ -20,7 +20,8 @@ public class AvatarController {
     }
 
     @GetMapping
-    public List<Avatar> listar(@RequestParam(required = false) Boolean male) {
-        return avatarService.listar(male);
+    public List<Avatar> listar(@RequestParam(required = false) Boolean male,
+                               @RequestParam(defaultValue = "20") int limit) {
+        return avatarService.listar(male, limit);
     }
 }
