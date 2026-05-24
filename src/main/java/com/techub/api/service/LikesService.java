@@ -3,15 +3,13 @@ package com.techub.api.service;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
+import com.techub.api.dto.SummaryListResponseDTO;
 import com.techub.api.repository.LikesRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 @Service
 public class LikesService {
@@ -65,21 +63,25 @@ public class LikesService {
         return likesRepository.countBySummary(summary);
     }
 
-    public List<Map<String, Object>> getRanking(int limit) {
+    public List<SummaryListResponseDTO> getRanking(int limit) {
         // Busca os resumos ordenados por curtidas
         List<Object[]> resultado = likesRepository.findRanking();
 
-        // Converte para um formato legível na resposta
-        List<Map<String, Object>> ranking = new ArrayList<>();
-
-        for (Object[] linha : resultado) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("resumo", linha[0]);        // o objeto Summary
-            item.put("totalCurtidas", linha[1]); // o total de curtidas
-            ranking.add(item);
-        }
-
         int pageSize = Math.max(1, limit);
-        return ranking.stream().limit(pageSize).toList();
+        return resultado.stream()
+                .limit(pageSize)
+                .map(linha -> new SummaryListResponseDTO(
+                        ((Number) linha[1]).longValue(),
+                        (String) linha[2],
+                        (String) linha[3],
+                        ((Number) linha[0]).longValue(),
+                        (String) linha[4],
+                        (String) linha[5],
+                        linha[6] == null ? null : ((Number) linha[6]).intValue(),
+                        (Boolean) linha[7],
+                        (Boolean) linha[8],
+                        ((Number) linha[9]).longValue()
+                ))
+                .toList();
     }
 }

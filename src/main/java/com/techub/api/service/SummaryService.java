@@ -86,13 +86,38 @@ public class SummaryService {
         );
     }
 
-    public List<SummaryGetResponseDTO> getAll(int limit) {
+    private SummaryListResponseDTO toListResponse(Summary summary, boolean includeLikes) {
+        Long totalCurtidas = null;
+
+        Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
+
+        if (includeLikes && Boolean.TRUE.equals(summary.getAtivo()) && Boolean.TRUE.equals(summary.getPublico())) {
+            totalCurtidas = likesService.contarCurtidas(summary);
+        }
+
+        String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+
+        return new SummaryListResponseDTO(
+                summary.getStudent().getId(),
+                summary.getStudent().getNome(),
+                studentUrl,
+                summary.getId(),
+                summary.getTitulo(),
+                summary.getConteudo(),
+                totalReports,
+                summary.getPublico(),
+                summary.getAtivo(),
+                totalCurtidas
+        );
+    }
+
+    public List<SummaryListResponseDTO> getAll(int limit) {
         int pageSize = Math.max(1, limit);
 
         return summaryRepository.findActive(PageRequest.of(0, pageSize))
                 .getContent()
                 .stream()
-                .map(summary -> toResponse(summary, true))
+                .map(summary -> toListResponse(summary, true))
                 .toList();
     }
 
@@ -121,7 +146,7 @@ public class SummaryService {
         return toResponse(summary, true);
     }
 
-        public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
+        public List<SummaryListResponseDTO> getStudentSummary(Long id, int limit){
             Student student = studentService.resolveStudentByIdOrUserId(id);
 
         int pageSize = Math.max(1, limit);
@@ -129,7 +154,7 @@ public class SummaryService {
         return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
             .getContent()
                 .stream()
-                .map(summary -> toResponse(summary, true))
+                    .map(summary -> toListResponse(summary, true))
                 .toList();
     }
 

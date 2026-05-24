@@ -3,6 +3,7 @@ package com.techub.api.controller;
 import com.techub.api.domain.Student;
 import com.techub.api.dto.SummaryCreateRequestDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
+import com.techub.api.dto.SummaryListResponseDTO;
 import com.techub.api.dto.SummaryUpdateRequestDTO;
 import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.StudentService;
@@ -37,7 +38,7 @@ public class SummaryController {
     }
 
     @GetMapping
-    public List<SummaryGetResponseDTO> listar(@RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryListResponseDTO> listar(@RequestParam(defaultValue = "20") int limit) {
         return service.getAll(limit);
     }
 
@@ -47,7 +48,7 @@ public class SummaryController {
     }
 
     @GetMapping("/me")
-    public List<SummaryGetResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryListResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
         Student student = currentUserService.getCurrentStudent();
 
         return service.getStudentSummary(student.getId(), limit);
