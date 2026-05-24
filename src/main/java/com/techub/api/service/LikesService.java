@@ -65,7 +65,7 @@ public class LikesService {
         return likesRepository.countBySummary(summary);
     }
 
-    public List<Map<String, Object>> getRanking() {
+    public List<Map<String, Object>> getRanking(int limit) {
         // Busca os resumos ordenados por curtidas
         List<Object[]> resultado = likesRepository.findRanking();
 
@@ -79,6 +79,7 @@ public class LikesService {
             ranking.add(item);
         }
 
-        return ranking;
+        int pageSize = Math.max(1, limit);
+        return ranking.stream().limit(pageSize).toList();
     }
 }

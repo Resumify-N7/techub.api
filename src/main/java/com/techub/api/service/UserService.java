@@ -8,6 +8,7 @@ import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.UserRepository;
 import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,9 +105,11 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public List<UserGetResponseDTO> findByAtivoTrue() {
+    public List<UserGetResponseDTO> findByAtivoTrue(int limit) {
+        int pageSize = Math.max(1, limit);
 
-        return userRepository.findByAtivoTrue()
+        return userRepository.findActive(PageRequest.of(0, pageSize))
+                .getContent()
                 .stream()
                 .map(user -> new UserGetResponseDTO(
                         user.getId(),
@@ -118,9 +121,11 @@ public class UserService {
                 )).toList();
     }
 
-    public List<UserGetResponseDTO> findByAtivoFalse() {
+    public List<UserGetResponseDTO> findByAtivoFalse(int limit) {
+        int pageSize = Math.max(1, limit);
 
-        return userRepository.findByAtivoFalse()
+        return userRepository.findInactive(PageRequest.of(0, pageSize))
+                .getContent()
                 .stream()
                 .map(user -> new UserGetResponseDTO(
                         user.getId(),
@@ -141,7 +146,11 @@ public class UserService {
     }
 
     public void deletar(Long id) {
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Erro ao buscar usuario!"));
+
+        user.setAtivo(false);
+        userRepository.save(user);
     }
 
     @Transactional

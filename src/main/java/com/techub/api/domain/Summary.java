@@ -10,7 +10,7 @@ import java.util.List;
 @Entity
 @Table(name = "tb_resumos")
 @Getter @Setter
-public class Summary {
+public class Summary extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,9 +27,6 @@ public class Summary {
 
     @Column
     private Integer reports = 0;
-
-    @Column
-    private Boolean ativo = true;
 
     @Column
     private Boolean publico = true;

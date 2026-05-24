@@ -4,7 +4,7 @@ import com.techub.api.domain.Student;
 import com.techub.api.dto.SummaryCreateRequestDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
 import com.techub.api.dto.SummaryUpdateRequestDTO;
-import com.techub.api.service.JwtService;
+import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.StudentService;
 import com.techub.api.service.SummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,23 +23,11 @@ public class SummaryController {
     private SummaryService service;
 
     @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private StudentService studentService;
+    private CurrentUserService currentUserService;
 
     @PostMapping
-    public ResponseEntity<?> criar(@CookieValue(name = "accessToken", required = false) String token , @RequestBody SummaryCreateRequestDTO dto) {
-        if(token == null || token.isBlank()) {
-            throw  new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Token ausente"
-            );
-        }
-
-        String email = jwtService.extractEmail(token);
-
-        Student student = studentService.buscar_perfilEmail(email);
+    public ResponseEntity<?> criar(@RequestBody SummaryCreateRequestDTO dto) {
+        Student student = currentUserService.getCurrentStudent();
 
         try {
             return ResponseEntity.ok(service.saveSummary(dto, student.getId()));
@@ -49,18 +37,25 @@ public class SummaryController {
     }
 
     @GetMapping
-    public List<SummaryGetResponseDTO> listar() {
-        return service.getAll();
+    public List<SummaryGetResponseDTO> listar(@RequestParam(defaultValue = "20") int limit) {
+        return service.getAll(limit);
     }
 
     @GetMapping("/ativos")
-    public List<SummaryGetResponseDTO> listarResumosAtivados() {
-        return service.findByAtivoTrue()    ;
+    public List<SummaryGetResponseDTO> listarResumosAtivados(@RequestParam(defaultValue = "20") int limit) {
+        return service.findByAtivoTrue(limit);
+    }
+
+    @GetMapping("/me")
+    public List<SummaryGetResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
+        Student student = currentUserService.getCurrentStudent();
+
+        return service.getStudentSummary(student.getId(), limit);
     }
 
     @GetMapping("/desativados")
-    public List<SummaryGetResponseDTO> listarResumosDesativados() {
-        return service.findByAtivoFalse();
+    public List<SummaryGetResponseDTO> listarResumosDesativados(@RequestParam(defaultValue = "20") int limit) {
+        return service.findByAtivoFalse(limit);
     }
 
     @GetMapping("/{id}")
@@ -79,16 +74,8 @@ public class SummaryController {
         return ResponseEntity.ok("Sucesso ao atualizar o status do Resumo");
     }
     @PatchMapping("/reportar/{id}")
-    public ResponseEntity<?> reportar(
-            @CookieValue(name = "accessToken", required = false) String token,
-            @PathVariable Long id) {
-
-        if (token == null || token.isBlank()) {
-            return ResponseEntity.status(401).body("Token ausente");
-        }
-
-        String email = jwtService.extractEmail(token);
-        var student = studentService.buscar_perfilEmail(email);
+    public ResponseEntity<?> reportar(@PathVariable Long id) {
+        var student = currentUserService.getCurrentStudent();
 
         try {
             service.reportar(id, student.getId());
@@ -105,16 +92,8 @@ public class SummaryController {
     }
 
     @PatchMapping("/{summaryId}/visibilidade")
-    public ResponseEntity<?> alternarVisibilidade(
-            @CookieValue(name = "accessToken", required = false) String token,
-            @PathVariable Long summaryId) {
-
-        if (token == null || token.isBlank()) {
-            return ResponseEntity.status(401).body("Token ausente");
-        }
-
-        String email = jwtService.extractEmail(token);
-        var student = studentService.buscar_perfilEmail(email);
+    public ResponseEntity<?> alternarVisibilidade(@PathVariable Long summaryId) {
+        var student = currentUserService.getCurrentStudent();
 
         try {
             service.alternarVisibilidade(summaryId, student.getId());

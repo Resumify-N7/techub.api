@@ -10,6 +10,7 @@ import com.techub.api.repository.CourseChangeRepository;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,11 +43,14 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
     }
 
-    public Integer obter_pontuacao(Long id){ return buscar_por_id(id).getPontuacao(); }
+    public Integer obter_pontuacao(Long id){ return resolveStudentByIdOrUserId(id).getPontuacao(); }
 
-    public List<Student> listar() { return studentRepository.findAll(); }
+    public List<Student> listar(int limit) {
+        int pageSize = Math.max(1, limit);
+        return studentRepository.findActive(PageRequest.of(0, pageSize)).getContent();
+    }
 
-    public Student buscar_perfilId(Long id) {
+    public Student resolveStudentByIdOrUserId(Long id) {
         Optional<Student> studentOpt = studentRepository.findById(id);
         if (studentOpt.isPresent()) {
             return studentOpt.get();
@@ -69,9 +73,13 @@ public class StudentService {
         return student;
     }
 
+    public Student buscar_perfilId(Long id) {
+        return resolveStudentByIdOrUserId(id);
+    }
+
     public Student buscar_perfilEmail(String email) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndAtivoTrue(email)
                 .orElseThrow(() -> new ResponseStatusException(
                         org.springframework.http.HttpStatus.NOT_FOUND,
                         "Usuário não encontrado"
@@ -90,8 +98,7 @@ public class StudentService {
 
     @Transactional
     public void atualizar_perfil(Long id, UserUpdateStudentRequestDTO dto) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
+        Student student = resolveStudentByIdOrUserId(id);
 
         if (dto.nome() != null) {
             student.setNome(dto.nome());
@@ -109,22 +116,21 @@ public class StudentService {
         studentRepository.save(student);
     }
 
+
     //mexe aqui isso que ta faltando
     public void trocarCurso(Long studentId, Long courseId) {
+        Student student = resolveStudentByIdOrUserId(studentId);
 
         LocalDateTime inicioMes = LocalDate.now()
                 .withDayOfMonth(1)
                // .toLocalDate()
                 .atStartOfDay();
 
-        int trocas = courseChangeRepository.countByStudentIdAndDataTrocaAfter(studentId, inicioMes);
+        int trocas = courseChangeRepository.countByStudentIdAndDataTrocaAfter(student.getId(), inicioMes);
 
         if (trocas >= 6) {
             throw new RuntimeException("Limite de trocas atingido");
         }
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
-
         Course novoCurso = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
 
@@ -140,10 +146,23 @@ public class StudentService {
     }
 
 
-    public void deletar(Long id){ studentRepository.deleteById(id);  }
+    public void deletar(Long id){
+        Student student = resolveStudentByIdOrUserId(id);
+        student.setAtivo(false);
+        studentRepository.save(student);
+    }
+
+    @Transactional
+    public void atualizar_status(Long id) {
+        Student student = resolveStudentByIdOrUserId(id);
+        student.setAtivo(!Boolean.TRUE.equals(student.getAtivo()));
+        studentRepository.save(student);
+    }
 
     public UserLoginDataDTO obter_dados_login(Long id){
-        User user = userRepository.findByStudent_Id(id)
+        Student student = resolveStudentByIdOrUserId(id);
+
+        User user = userRepository.findByStudent_Id(student.getId())
                 .orElseThrow(() -> new RuntimeException("Erro ao encontrar estudante"));
 
         return new UserLoginDataDTO(user.getEmail(), user.getSenha());
