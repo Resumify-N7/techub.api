@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@Profile({"test","seed"})
 public class AvatarSeedRunner implements CommandLineRunner {
 
     private final AvatarRepository avatarRepository;

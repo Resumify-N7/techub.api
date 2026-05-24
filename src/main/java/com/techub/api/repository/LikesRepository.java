@@ -18,6 +18,14 @@ public interface LikesRepository extends SoftDeleteRepository<Likes, Long> {
     long countBySummary(Summary summary);
 
     // Retorna os resumos ordenados pelo número de curtidas (do mais curtido para o menos)
-    @Query("SELECT l.summary, COUNT(l) as totalLikes FROM Likes l GROUP BY l.summary ORDER BY totalLikes DESC")
+    @Query("""
+        SELECT s.id, s.student.id, s.student.nome, a.url, s.titulo, s.conteudo, s.reports, s.publico, s.ativo, COUNT(l)
+        FROM Likes l
+        JOIN l.summary s
+        LEFT JOIN s.student st
+        LEFT JOIN st.avatar a
+        GROUP BY s.id, s.student.id, s.student.nome, a.url, s.titulo, s.conteudo, s.reports, s.publico, s.ativo
+        ORDER BY COUNT(l) DESC
+    """)
     List<Object[]> findRanking();
 }

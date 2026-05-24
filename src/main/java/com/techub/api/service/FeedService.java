@@ -2,6 +2,7 @@ package com.techub.api.service;
 
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.FeedDTO;
+import com.techub.api.dto.SummaryListResponseDTO;
 import com.techub.api.repository.SummaryRepository;
 import com.techub.api.repository.SummarySpecification;
 import org.springframework.data.domain.Page;
@@ -42,7 +43,7 @@ public class FeedService {
             );
 
             return new FeedDTO(
-                    summaries.getContent(),
+                    summaries.getContent().stream().map(this::toListResponse).toList(),
                     summaries.getNumber(),
                     summaries.getSize(),
                     summaries.getTotalElements()
@@ -63,11 +64,28 @@ public class FeedService {
         Page<Summary> summaries = summaryRepository.findAll(spec, pageable);
 
         return new FeedDTO(
-                summaries.getContent(),
+                                summaries.getContent().stream().map(this::toListResponse).toList(),
                 summaries.getNumber(),
                 summaries.getSize(),
                 summaries.getTotalElements()
         );
     }
+
+        private SummaryListResponseDTO toListResponse(Summary summary) {
+                String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+
+                return new SummaryListResponseDTO(
+                                summary.getStudent().getId(),
+                                summary.getStudent().getNome(),
+                                studentUrl,
+                                summary.getId(),
+                                summary.getTitulo(),
+                                summary.getConteudo(),
+                                summary.getReports(),
+                                summary.getPublico(),
+                                summary.getAtivo(),
+                                null
+                );
+        }
 }
 

@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Component
-@Profile({"test", "seed"})
 public class BioSeedRunner implements CommandLineRunner {
 
     private final BioRepository bioRepository;

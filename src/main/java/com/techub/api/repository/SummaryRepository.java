@@ -4,14 +4,20 @@ import com.techub.api.domain.Summary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, JpaSpecificationExecutor<Summary> {
+    @EntityGraph(attributePaths = {"student", "student.avatar"})
+    Page<Summary> findActive(Pageable pageable);
+
     List<Summary> findByStudentId(Long studentId);
     List<Summary> findByStudentIdAndAtivoTrue(Long studentId);
+
+    @EntityGraph(attributePaths = {"student", "student.avatar"})
     Page<Summary> findByStudentIdAndAtivoTrue(Long studentId, Pageable pageable);
 
 
@@ -21,6 +27,7 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
            OR s.course.id IN :followingCourses
         ORDER BY s.datahora DESC
     """)
+    @EntityGraph(attributePaths = {"student", "student.avatar"})
     Page<Summary> findFeedSummaries(
             List<Long> followingUsers,
             List<Long> followingCourses,
