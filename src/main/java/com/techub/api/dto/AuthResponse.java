@@ -5,5 +5,6 @@ import com.techub.api.domain.Role;
 public record AuthResponse (
         Boolean status,
         Long id,
+        Long studentId,
         Role role
 ) {}

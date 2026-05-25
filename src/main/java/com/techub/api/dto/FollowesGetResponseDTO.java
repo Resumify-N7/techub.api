@@ -7,5 +7,7 @@ public record FollowesGetResponseDTO(
         Long followerd,
         String name,
         Integer semestre,
-        Course course
+        Course course,
+        Integer seguidores,
+        String studentUrl
 ) {}

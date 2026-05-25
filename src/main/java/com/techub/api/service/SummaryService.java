@@ -158,6 +158,22 @@ public class SummaryService {
                 .toList();
     }
 
+        public List<SummaryListResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
+            Student student = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            org.springframework.http.HttpStatus.NOT_FOUND,
+                            "Estudante não encontrado"
+                    ));
+
+            int pageSize = Math.max(1, limit);
+
+            return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
+                    .getContent()
+                    .stream()
+                    .map(summary -> toListResponse(summary, true))
+                    .toList();
+        }
+
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
