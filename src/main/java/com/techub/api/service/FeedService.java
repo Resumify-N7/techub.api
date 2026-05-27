@@ -28,9 +28,8 @@ public class FeedService {
         public FeedDTO getFeed(Long studentId, int page, int size) {
 
             List<Long> followingUsers = followService.getFollowingUsers(studentId);
-            List<Long> followingCourses = followService.getFollowingCourses(studentId);
 
-            if (followingUsers.isEmpty() && followingCourses.isEmpty()) {
+            if (followingUsers.isEmpty()) {
                 return new FeedDTO(List.of(), page, size, 0);
             }
 
@@ -38,7 +37,6 @@ public class FeedService {
 
             Page<Summary> summaries = summaryRepository.findFeedSummaries(
                     followingUsers,
-                    followingCourses,
                     pageable
             );
 

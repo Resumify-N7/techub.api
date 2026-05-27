@@ -28,19 +28,7 @@ public class FollowService {
         return follows.stream()
                 .map(follow -> follow.getFollowing().getId())
                 .toList();
-    }
-
-    // Cursos que o estudante segue
-    public List<Long> getFollowingCourses(Long studentId) {
-
-        List<Followers> follows =
-                followersRepository.findByFollowerId(studentId);
-
-        return follows.stream()
-                .map(follow -> follow.getFollowing().getCourse().getId())
-                .distinct()
-                .toList();
-    }
+        }
 
         public List<FollowesGetResponseDTO> getFollowingDetails(Long studentId, int limit) {
                 int pageSize = Math.max(1, limit);
@@ -62,7 +50,7 @@ public class FollowService {
                     );
                 })
                 .toList();
-    }
+        }
 
         public List<FollowesGetResponseDTO> getFollowersDetails(Long studentId, int limit) {
                 int pageSize = Math.max(1, limit);

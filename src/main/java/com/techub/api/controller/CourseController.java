@@ -61,4 +61,15 @@ public class CourseController {
             @RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok(courseService.listarSubjectsPorCursoESemestre(id, semestre, limit));
     }
+
+    @PatchMapping("/atualizar_status/{id}")
+    public ResponseEntity<?> atualizar_status(@PathVariable Long id) {
+        courseService.atualizar_status(id);
+        return ResponseEntity.ok("Sucesso ao atualizar o status do Curso");
+    }
+
+    @GetMapping("/desativados")
+    public List<Course> listar_desativados(@RequestParam(defaultValue = "20") int limit) {
+       return courseService.listarCursosDesativados(limit);
+    }
 }
