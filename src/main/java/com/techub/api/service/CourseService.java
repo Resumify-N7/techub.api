@@ -3,6 +3,7 @@ package com.techub.api.service;
 import com.techub.api.domain.Course;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Subject;
+import com.techub.api.domain.Summary;
 import com.techub.api.dto.StudentGetSimpleResponseDTO;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.StudentRepository;
@@ -59,7 +60,7 @@ public class CourseService {
         Course course = courseRepository.findById(cursoId)
                 .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
         
-        return subjectRepository.findByCourse(course);
+        return subjectRepository.findByCourseAndAtivoTrue(course);
     }
 
     public List<StudentGetSimpleResponseDTO> listarStudentsPorCursoESemestre(Long cursoId, Integer semestre, int limit) {
@@ -82,6 +83,19 @@ public class CourseService {
                 .orElseThrow(() -> new RuntimeException("Curso não encontrado"));
 
         int pageSize = Math.max(1, limit);
-        return subjectRepository.findByCourseAndSemestre(course, semestre, PageRequest.of(0, pageSize)).getContent();
+        return subjectRepository.findByCourseAndSemestreAndAtivoTrue(course, semestre, PageRequest.of(0, pageSize)).getContent();
+    }
+
+    public List<Course> listarCursosDesativados(int limit) {
+        int pageSize = Math.max(1, limit);
+        return courseRepository.findInactive(PageRequest.of(0, pageSize)).stream().toList();
+    }
+
+    public void atualizar_status(Long id){
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Não foi possivel encontrar o resumo!"));
+
+        course.setAtivo(!course.getAtivo());
+        courseRepository.save(course);
     }
 }

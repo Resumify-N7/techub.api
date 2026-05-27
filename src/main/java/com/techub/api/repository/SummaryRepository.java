@@ -25,13 +25,11 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
     @Query("""
         SELECT s FROM Summary s
         WHERE s.student.id IN :followingUsers
-           OR s.subject.course.id IN :followingCourses
         ORDER BY s.datahora DESC
     """)
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
     Page<Summary> findFeedSummaries(
             List<Long> followingUsers,
-            List<Long> followingCourses,
             Pageable pageable
     );
     @Query("""
