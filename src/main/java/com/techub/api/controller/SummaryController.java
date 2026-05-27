@@ -54,6 +54,20 @@ public class SummaryController {
         return service.getStudentSummary(student.getId(), limit);
     }
 
+    @GetMapping("/student/{studentId}")
+    public List<SummaryListResponseDTO> getStudentSummaryByStudentId(
+            @PathVariable Long studentId,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return service.getStudentSummaryByStudentId(studentId, limit);
+    }
+
+    @GetMapping("/subject/{subjectId}")
+    public List<SummaryListResponseDTO> getBySubject(@PathVariable Long subjectId,
+                                                    @RequestParam(defaultValue = "20") int limit) {
+        return service.getBySubjectId(subjectId, limit);
+    }
+
     @GetMapping("/desativados")
     public List<SummaryGetResponseDTO> listarResumosDesativados(@RequestParam(defaultValue = "20") int limit) {
         return service.findByAtivoFalse(limit);

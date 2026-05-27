@@ -56,7 +56,9 @@ public class FollowService {
                             follow.getFollower().getId(),
                             s.getNome(),
                             s.getSemestre(),
-                            s.getCourse()
+                            s.getCourse(),
+                            s.getFollowers().size(),
+                            s.getAvatar().getUrl()
                     );
                 })
                 .toList();
@@ -76,7 +78,9 @@ public class FollowService {
                             follow.getFollower().getId(),
                             s.getNome(),
                             s.getSemestre(),
-                            s.getCourse()
+                            s.getCourse(),
+                            s.getFollowers().size(),
+                            s.getAvatar().getUrl()
                     );
                 })
                 .toList();

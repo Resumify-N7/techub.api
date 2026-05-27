@@ -40,4 +40,18 @@ public class Student extends BaseEntity {
     @OneToMany(mappedBy = "student")
     @JsonIgnore
     private List<Summary> summaries = new ArrayList<>();
+
+    @OneToMany(mappedBy = "follower")
+    @JsonIgnore
+    private List<Followers> following = new ArrayList<>();
+
+    @Transient
+    private Boolean seguindoCurrentUser;
+
+    @Transient
+    private Boolean seguidoPeloCurrentUser;
+
+    @OneToMany(mappedBy = "following")
+    @JsonIgnore
+    private List<Followers> followers = new ArrayList<>();
 }

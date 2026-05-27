@@ -1,15 +1,9 @@
 package com.techub.api.service;
 
-import com.techub.api.domain.Course;
-import com.techub.api.domain.CourseChange;
-import com.techub.api.domain.Student;
-import com.techub.api.domain.User;
+import com.techub.api.domain.*;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
-import com.techub.api.repository.CourseChangeRepository;
-import com.techub.api.repository.CourseRepository;
-import com.techub.api.repository.StudentRepository;
-import com.techub.api.repository.UserRepository;
+import com.techub.api.repository.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,6 +31,12 @@ public class StudentService {
 
     @Autowired
     private AvatarService avatarService;
+
+    @Autowired
+    private FollowersRepository followersRepository;
+
+    @Autowired
+    private CurrentUserService currentUserService;
 
     public Student buscar_por_id(Long id) {
         return studentRepository.findById(id)
@@ -74,7 +74,21 @@ public class StudentService {
     }
 
     public Student buscar_perfilId(Long id) {
-        return resolveStudentByIdOrUserId(id);
+        Student student = buscar_por_id(id);
+        Student currentStudent = currentUserService.getCurrentStudent();
+
+        boolean currentUserFollowsTarget = followersRepository
+            .findByFollowerIdAndFollowingId(currentStudent.getId(), student.getId())
+            .isPresent();
+
+        boolean targetFollowsCurrentUser = followersRepository
+            .findByFollowerIdAndFollowingId(student.getId(), currentStudent.getId())
+            .isPresent();
+
+        student.setSeguidoPeloCurrentUser(currentUserFollowsTarget);
+        student.setSeguindoCurrentUser(targetFollowsCurrentUser);
+
+        return student;
     }
 
     public Student buscar_perfilEmail(String email) {

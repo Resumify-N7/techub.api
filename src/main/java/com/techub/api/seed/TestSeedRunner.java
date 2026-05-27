@@ -12,6 +12,7 @@ import com.techub.api.repository.FollowersRepository;
 import com.techub.api.repository.LikesRepository;
 import com.techub.api.repository.ReportRepository;
 import com.techub.api.repository.StudentRepository;
+import com.techub.api.repository.SubjectRepository;
 import com.techub.api.repository.SummaryRepository;
 import com.techub.api.repository.UniversityRepository;
 import com.techub.api.repository.UserRepository;
@@ -22,6 +23,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +43,7 @@ public class TestSeedRunner implements CommandLineRunner {
     private final SummaryRepository summaryRepository;
     private final CourseChangeRepository courseChangeRepository;
     private final CourseRepository courseRepository;
+    private final SubjectRepository subjectRepository;
     private final UniversityRepository universityRepository;
 
     public TestSeedRunner(
@@ -55,6 +58,7 @@ public class TestSeedRunner implements CommandLineRunner {
             SummaryRepository summaryRepository,
             CourseChangeRepository courseChangeRepository,
             CourseRepository courseRepository,
+            SubjectRepository subjectRepository,
             UniversityRepository universityRepository) {
         this.userService = userService;
         this.followService = followService;
@@ -67,6 +71,7 @@ public class TestSeedRunner implements CommandLineRunner {
         this.summaryRepository = summaryRepository;
         this.courseChangeRepository = courseChangeRepository;
         this.courseRepository = courseRepository;
+        this.subjectRepository = subjectRepository;
         this.universityRepository = universityRepository;
     }
 
@@ -103,10 +108,18 @@ public class TestSeedRunner implements CommandLineRunner {
         for (int i = 0; i < students.size(); i++) {
             Student student = students.get(i);
             for (int j = 1; j <= 2; j++) {
+            var subject = subjectRepository.findByCourseAndSemestre(
+                student.getCourse(),
+                student.getSemestre(),
+                PageRequest.of(0, 1)
+            ).getContent().stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Matéria não encontrada para o seed"));
+
                 summaryService.saveSummary(
                         new SummaryCreateRequestDTO(
                                 "summary" + (i + 1) + "Title" + j,
-                                "summaryContent" + (i + 1) + j + " para o student" + (i + 1) + "."
+                    "summaryContent" + (i + 1) + j + " para o student" + (i + 1) + ".",
+                    subject.getId()
                         ),
                         student.getId()
                 );

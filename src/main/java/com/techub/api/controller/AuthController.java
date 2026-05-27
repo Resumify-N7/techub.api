@@ -74,6 +74,8 @@ public class AuthController {
     public ResponseEntity<?> auth(){
         User user = currentUserService.getCurrentUser();
 
-        return ResponseEntity.ok(new AuthResponse(true, user.getId(), user.getRole()));
+        Long studentId = user.getStudent() != null ? user.getStudent().getId() : null;
+
+        return ResponseEntity.ok(new AuthResponse(true, user.getId(), studentId, user.getRole()));
     }
 }
