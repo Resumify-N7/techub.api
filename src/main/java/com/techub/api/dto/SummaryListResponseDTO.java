@@ -4,6 +4,8 @@ public record SummaryListResponseDTO(
         Long studentId,
         String studentNome,
         String studentUrl,
+        Long subjectId,
+        String subjectNome,
         Long summaryId,
         String titulo,
         String conteudo,

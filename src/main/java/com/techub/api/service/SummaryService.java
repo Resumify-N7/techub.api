@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,22 +22,23 @@ public class SummaryService {
     @Autowired
     private ReportRepository reportRepository;
     @Autowired
-    private final CourseRepository courseRepository;
-    @Autowired
     private final StudentRepository studentRepository;
+    @Autowired
+    private final SubjectRepository subjectRepository;
     @Autowired
     private final StudentService studentService;
 
     public SummaryService(SummaryRepository summaryRepository,
-                          CourseRepository courseRepository,
                           StudentRepository studentRepository,
+                          SubjectRepository subjectRepository,
                           StudentService studentService) {
         this.summaryRepository = summaryRepository;
-        this.courseRepository = courseRepository;
         this.studentRepository = studentRepository;
+        this.subjectRepository = subjectRepository;
         this.studentService = studentService;
     }
 
+    @Transactional
     public SummaryCreateResponseDTO saveSummary(SummaryCreateRequestDTO dto, Long id) {
 
         if (dto.titulo() == null || dto.titulo().isEmpty()) {
@@ -46,20 +49,39 @@ public class SummaryService {
             throw new IllegalArgumentException("Conteudo é obrigatório");
         }
 
+        if (dto.subjectId() == null) {
+            throw new IllegalArgumentException("Matéria é obrigatória");
+        }
+
         Student student = studentService.resolveStudentByIdOrUserId(id);
+        Subject subject = subjectRepository.findById(dto.subjectId())
+                .orElseThrow(() -> new RuntimeException("Matéria não encontrada"));
+
+        if (student.getCourse() == null || subject.getCourse() == null
+                || !student.getCourse().getId().equals(subject.getCourse().getId())) {
+            throw new RuntimeException("A matéria precisa pertencer ao curso do estudante");
+        }
+
+        if (student.getSemestre() != null && subject.getSemestre() != null
+                && !student.getSemestre().equals(subject.getSemestre())) {
+            throw new RuntimeException("A matéria precisa pertencer ao semestre atual do estudante");
+        }
 
         Summary summary = new Summary();
         summary.setTitulo(dto.titulo());
         summary.setConteudo(dto.conteudo());
         summary.setStudent(student);
-
-        Course course = courseRepository.findTopByOrderByIdAsc()
-            .orElseThrow(() -> new RuntimeException("Curso DSM não encontrado"));
-        summary.setCourse(course);
+        summary.setSubject(subject);
+        summary.setDatahora(LocalDateTime.now());
 
         try {
             summaryRepository.save(summary);
-            return new SummaryCreateResponseDTO(student.getId(), summary.getTitulo(), summary.getConteudo());
+            return new SummaryCreateResponseDTO(
+                    student.getId(),
+                    subject.getId(),
+                    summary.getTitulo(),
+                    summary.getConteudo()
+            );
         } catch (Exception e) {
             throw new RuntimeException("Erro ao salvar resumo");
         }
@@ -77,6 +99,8 @@ public class SummaryService {
         return new SummaryGetResponseDTO(
                 summary.getStudent().getId(),
                 summary.getId(),
+            summary.getSubject() != null ? summary.getSubject().getId() : null,
+            summary.getSubject() != null ? summary.getSubject().getName() : null,
                 summary.getTitulo(),
                 summary.getConteudo(),
                 totalReports,
@@ -101,6 +125,8 @@ public class SummaryService {
                 summary.getStudent().getId(),
                 summary.getStudent().getNome(),
                 studentUrl,
+            summary.getSubject() != null ? summary.getSubject().getId() : null,
+            summary.getSubject() != null ? summary.getSubject().getName() : null,
                 summary.getId(),
                 summary.getTitulo(),
                 summary.getConteudo(),
@@ -111,6 +137,7 @@ public class SummaryService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<SummaryListResponseDTO> getAll(int limit) {
         int pageSize = Math.max(1, limit);
 
@@ -121,6 +148,7 @@ public class SummaryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<SummaryGetResponseDTO> findByAtivoTrue(int limit) {
         int pageSize = Math.max(1, limit);
 
@@ -131,6 +159,7 @@ public class SummaryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<SummaryGetResponseDTO> findByAtivoFalse(int limit) {
         int pageSize = Math.max(1, limit);
 
@@ -140,12 +169,14 @@ public class SummaryService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public SummaryGetResponseDTO getById(Long id) {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
         return toResponse(summary, true);
     }
 
+        @Transactional(readOnly = true)
         public List<SummaryListResponseDTO> getStudentSummary(Long id, int limit){
             Student student = studentService.resolveStudentByIdOrUserId(id);
 
@@ -158,6 +189,7 @@ public class SummaryService {
                 .toList();
     }
 
+        @Transactional(readOnly = true)
         public List<SummaryListResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
             Student student = studentRepository.findById(studentId)
                     .orElseThrow(() -> new ResponseStatusException(
@@ -183,6 +215,16 @@ public class SummaryService {
 
         summaryRepository.save(existing);
         return toResponse(existing, true);
+    }
+
+    public List<SummaryListResponseDTO> getBySubjectId(Long subjectId, int limit) {
+        int pageSize = Math.max(1, limit);
+
+        return summaryRepository.findBySubjectIdAndAtivoTrue(subjectId, PageRequest.of(0, pageSize))
+                .getContent()
+                .stream()
+                .map(summary -> toListResponse(summary, true))
+                .toList();
     }
 
     public void reportar(Long id, Long studentId){

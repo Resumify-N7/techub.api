@@ -11,23 +11,24 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, JpaSpecificationExecutor<Summary> {
-    @EntityGraph(attributePaths = {"student", "student.avatar"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
     Page<Summary> findActive(Pageable pageable);
 
     List<Summary> findByStudentId(Long studentId);
     List<Summary> findByStudentIdAndAtivoTrue(Long studentId);
+    Page<Summary> findBySubjectIdAndAtivoTrue(Long subjectId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"student", "student.avatar"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
     Page<Summary> findByStudentIdAndAtivoTrue(Long studentId, Pageable pageable);
 
 
     @Query("""
         SELECT s FROM Summary s
         WHERE s.student.id IN :followingUsers
-           OR s.course.id IN :followingCourses
+           OR s.subject.course.id IN :followingCourses
         ORDER BY s.datahora DESC
     """)
-    @EntityGraph(attributePaths = {"student", "student.avatar"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
     Page<Summary> findFeedSummaries(
             List<Long> followingUsers,
             List<Long> followingCourses,
@@ -36,8 +37,8 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
     @Query("""
         SELECT DISTINCT s FROM Summary s
         LEFT JOIN s.tags t
-        WHERE (:universityId IS NULL OR s.course.university.id = :universityId)
-          AND (:courseId     IS NULL OR s.course.id = :courseId)
+                WHERE (:universityId IS NULL OR s.subject.course.university.id = :universityId)
+                    AND (:courseId     IS NULL OR s.subject.course.id = :courseId)
           AND (:tagId        IS NULL OR t.id = :tagId)
           AND (:semestre     IS NULL OR s.subject.semestre = :semestre)
         ORDER BY s.datahora DESC
