@@ -1,8 +1,12 @@
 package com.techub.api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tb_materias")
@@ -20,7 +24,11 @@ public class Subject extends BaseEntity {
     private Integer semestre;
 
     @ManyToOne
-    @JoinColumn(name = "course_id")
+    @JoinColumn(name = "course_id", nullable = false)
+    @JsonIgnore
     private Course course;
 
+    @OneToMany(mappedBy = "subject")
+    @JsonIgnore
+    private List<Summary> summaries = new ArrayList<>();
 }

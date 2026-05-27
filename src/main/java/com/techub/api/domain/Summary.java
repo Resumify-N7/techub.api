@@ -36,10 +36,6 @@ public class Summary extends BaseEntity {
     private Student student;
 
     @ManyToOne
-    @JoinColumn(name = "course_id")
-    private Course course;
-
-    @ManyToOne
     @JoinColumn(name = "subject_id")
     private Subject subject;
 

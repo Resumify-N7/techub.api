@@ -78,6 +78,8 @@ public class FeedService {
                                 summary.getStudent().getId(),
                                 summary.getStudent().getNome(),
                                 studentUrl,
+                                summary.getSubject().getId(),
+                                summary.getSubject().getName(),
                                 summary.getId(),
                                 summary.getTitulo(),
                                 summary.getConteudo(),
