@@ -1,14 +1,17 @@
 package com.techub.api.service;
 
+import com.techub.api.domain.Badge;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.repository.BadgeRepository;
 import com.techub.api.repository.LikesRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -23,6 +26,10 @@ public class LikesService {
     @Autowired
     private SummaryRepository summaryRepository;
 
+    @Autowired
+    private BadgeRepository badgeRepository;
+
+    @Transactional
     public String curtir(Long summaryId, Long studentId) {
 
         // Busca o resumo no banco, lança erro se não existir
@@ -48,6 +55,8 @@ public class LikesService {
         like.setStudent(student);
         like.setSummary(summary);
         likesRepository.save(like);
+
+        concederBadgeSeNecessario(summary);
 
         return "Resumo curtido com sucesso";
     }
@@ -97,4 +106,26 @@ public class LikesService {
             ((Number) linha[9]).longValue()
         );
         }
+
+    private void concederBadgeSeNecessario(Summary summary) {
+        long totalCurtidas = likesRepository.countBySummary(summary);
+
+        if (totalCurtidas < 50) {
+            return;
+        }
+
+        if (summary.getBadge() != null) {
+            return;
+        }
+
+        Badge badge = badgeRepository.findByNameIgnoreCaseAndAtivoTrue("Resumo Popular")
+                .orElse(null);
+
+        if (badge == null) {
+            return;
+        }
+
+        summary.setBadge(badge);
+        summaryRepository.save(summary);
+    }
 }

@@ -39,6 +39,10 @@ public class Summary extends BaseEntity {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
+    @ManyToOne
+    @JoinColumn(name = "badge_id")
+    private Badge badge;
+
     @ManyToMany
     @JoinTable(name = "tb_resumo_tags",
             joinColumns = @JoinColumn(name = "resumo_id"),
