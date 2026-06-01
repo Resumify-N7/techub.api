@@ -1,5 +1,6 @@
 package com.techub.api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +43,10 @@ public class Summary extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "badge_id")
     private Badge badge;
+
+    @OneToMany(mappedBy = "summary")
+    @JsonIgnore
+    private List<Favorites> favorites = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(name = "tb_resumo_tags",
