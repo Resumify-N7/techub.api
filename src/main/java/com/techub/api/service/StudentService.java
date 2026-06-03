@@ -1,6 +1,7 @@
 package com.techub.api.service;
 
 import com.techub.api.domain.*;
+import com.techub.api.dto.StudentGetDTO;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
 import com.techub.api.repository.*;
@@ -73,7 +74,7 @@ public class StudentService {
         return student;
     }
 
-    public Student buscar_perfilId(Long id) {
+    public StudentGetDTO buscar_perfilId(Long id) {
         Student student = buscar_por_id(id);
         Student currentStudent = currentUserService.getCurrentStudent();
 
@@ -88,7 +89,20 @@ public class StudentService {
         student.setSeguidoPeloCurrentUser(currentUserFollowsTarget);
         student.setSeguindoCurrentUser(targetFollowsCurrentUser);
 
-        return student;
+        return new StudentGetDTO(
+                student.getAtivo(),
+                student.getId(),
+                student.getNome(),
+                student.getSemestre(),
+                student.getBio(),
+                student.getAvatar(),
+                student.getCourse(),
+                student.getPontuacao(),
+                student.getSeguindoCurrentUser(),
+                student.getSeguidoPeloCurrentUser(),
+                studentRepository.countFollowers(student.getId()),
+                studentRepository.countFollowing(student.getId())
+        );
     }
 
     public Student buscar_perfilEmail(String email) {

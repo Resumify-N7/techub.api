@@ -1,5 +1,6 @@
 package com.techub.api.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,9 +40,16 @@ public class Summary extends BaseEntity {
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
-    @ManyToMany
-    @JoinTable(name = "tb_resumo_tags",
-            joinColumns = @JoinColumn(name = "resumo_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id"))
-    private List<Tags> tags = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "badge_id")
+    private Badge badge;
+
+    @OneToMany(mappedBy = "summary")
+    @JsonIgnore
+    private List<Favorites> favorites = new ArrayList<>();
+
+        // Many-to-many via explicit join entity `TagSummary` (table: tags_resumos)
+        @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
+        @JsonIgnore
+        private List<TagSummary> tagLinks = new ArrayList<>();
 }

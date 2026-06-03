@@ -1,14 +1,19 @@
 package com.techub.api.service;
 
+import com.techub.api.domain.Badge;
+import com.techub.api.domain.Favorites;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.repository.BadgeRepository;
+import com.techub.api.repository.FavoritesRepository;
 import com.techub.api.repository.LikesRepository;
 import com.techub.api.repository.StudentRepository;
 import com.techub.api.repository.SummaryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -23,6 +28,13 @@ public class LikesService {
     @Autowired
     private SummaryRepository summaryRepository;
 
+    @Autowired
+    private BadgeRepository badgeRepository;
+
+    @Autowired
+    private FavoritesRepository favoritesRepository;
+
+    @Transactional
     public String curtir(Long summaryId, Long studentId) {
 
         // Busca o resumo no banco, lança erro se não existir
@@ -40,6 +52,7 @@ public class LikesService {
         if (jaGostou.isPresent()) {
             // já curtiu → descurte
             likesRepository.delete(jaGostou.get());
+            removeFavorite(student, summary);
             return "Curtida removida";
         }
 
@@ -48,6 +61,10 @@ public class LikesService {
         like.setStudent(student);
         like.setSummary(summary);
         likesRepository.save(like);
+
+        syncFavorite(student, summary);
+
+        concederBadgeSeNecessario(summary);
 
         return "Resumo curtido com sucesso";
     }
@@ -81,6 +98,10 @@ public class LikesService {
 
         Long subjectId = summary.getSubject() != null ? summary.getSubject().getId() : null;
         String subjectNome = summary.getSubject() != null ? summary.getSubject().getName() : null;
+        List<String> tags = summary.getTagLinks().stream()
+            .map(link -> link.getTag() != null ? link.getTag().getName() : null)
+            .filter(name -> name != null)
+            .toList();
 
         return new SummaryListResponseDTO(
             ((Number) linha[1]).longValue(),
@@ -94,7 +115,45 @@ public class LikesService {
             linha[6] == null ? null : ((Number) linha[6]).intValue(),
             (Boolean) linha[7],
             (Boolean) linha[8],
-            ((Number) linha[9]).longValue()
+            ((Number) linha[9]).longValue(),
+            tags
         );
         }
+
+    private void concederBadgeSeNecessario(Summary summary) {
+        long totalCurtidas = likesRepository.countBySummary(summary);
+
+        if (totalCurtidas < 50) {
+            return;
+        }
+
+        if (summary.getBadge() != null) {
+            return;
+        }
+
+        Badge badge = badgeRepository.findByNameIgnoreCaseAndAtivoTrue("Resumo Popular")
+                .orElse(null);
+
+        if (badge == null) {
+            return;
+        }
+
+        summary.setBadge(badge);
+        summaryRepository.save(summary);
+    }
+
+    private void syncFavorite(Student student, Summary summary) {
+        Favorites favorite = favoritesRepository.findByStudentAndSummary(student, summary)
+                .orElseGet(Favorites::new);
+
+        favorite.setStudent(student);
+        favorite.setSummary(summary);
+        favorite.setAtivo(true);
+        favoritesRepository.save(favorite);
+    }
+
+    private void removeFavorite(Student student, Summary summary) {
+        favoritesRepository.findByStudentAndSummary(student, summary)
+                .ifPresent(favoritesRepository::delete);
+    }
 }

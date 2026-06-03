@@ -11,14 +11,14 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, JpaSpecificationExecutor<Summary> {
-    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findActive(Pageable pageable);
 
     List<Summary> findByStudentId(Long studentId);
     List<Summary> findByStudentIdAndAtivoTrue(Long studentId);
     Page<Summary> findBySubjectIdAndAtivoTrue(Long subjectId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findByStudentIdAndAtivoTrue(Long studentId, Pageable pageable);
 
 
@@ -27,18 +27,20 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
         WHERE s.student.id IN :followingUsers
         ORDER BY s.datahora DESC
     """)
-    @EntityGraph(attributePaths = {"student", "student.avatar", "subject"})
+        @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findFeedSummaries(
             List<Long> followingUsers,
             Pageable pageable
     );
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
         SELECT DISTINCT s FROM Summary s
-        LEFT JOIN s.tags t
+        LEFT JOIN s.tagLinks tl
+        LEFT JOIN tl.tag t
                 WHERE (:universityId IS NULL OR s.subject.course.university.id = :universityId)
                     AND (:courseId     IS NULL OR s.subject.course.id = :courseId)
-          AND (:tagId        IS NULL OR t.id = :tagId)
-          AND (:semestre     IS NULL OR s.subject.semestre = :semestre)
+      AND (:tagId        IS NULL OR t.id = :tagId)
+      AND (:semestre     IS NULL OR s.subject.semestre = :semestre)
         ORDER BY s.datahora DESC
     """)
     Page<Summary> findByFilters(

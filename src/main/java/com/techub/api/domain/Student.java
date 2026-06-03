@@ -41,6 +41,10 @@ public class Student extends BaseEntity {
     @JsonIgnore
     private List<Summary> summaries = new ArrayList<>();
 
+    @OneToMany(mappedBy = "student")
+    @JsonIgnore
+    private List<Favorites> favorites = new ArrayList<>();
+
     @OneToMany(mappedBy = "follower")
     @JsonIgnore
     private List<Followers> following = new ArrayList<>();

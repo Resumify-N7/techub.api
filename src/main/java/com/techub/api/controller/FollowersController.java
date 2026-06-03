@@ -36,8 +36,20 @@ public class FollowersController {
         return ResponseEntity.ok("Deixou de seguir");
     }
 
+    @GetMapping("/following/{id}")
+    public ResponseEntity<List<FollowesGetResponseDTO>> myFollowing(@PathVariable Long id, @RequestParam(defaultValue = "20") int limit) {
+        List<FollowesGetResponseDTO> following = followService.getFollowingDetails(id, limit);
+        return ResponseEntity.ok(following);
+    }
+
+    @GetMapping("/followers/{id}")
+    public ResponseEntity<List<FollowesGetResponseDTO>> getFollowers(@PathVariable Long id, @RequestParam(defaultValue = "20") int limit) {
+        List<FollowesGetResponseDTO> followers = followService.getFollowersDetails(id, limit);
+        return ResponseEntity.ok(followers);
+    }
+
     @GetMapping("/following/me")
-    public ResponseEntity<List<FollowesGetResponseDTO>> myFollowing(@RequestParam(defaultValue = "20") int limit) {
+    public ResponseEntity<List<FollowesGetResponseDTO>> getFollowing(@RequestParam(defaultValue = "20") int limit) {
         Student me = currentUserService.getCurrentStudent();
 
         List<FollowesGetResponseDTO> following = followService.getFollowingDetails(me.getId(), limit);
