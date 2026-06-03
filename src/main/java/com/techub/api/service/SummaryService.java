@@ -22,6 +22,8 @@ public class SummaryService {
     @Autowired
     private ReportRepository reportRepository;
     @Autowired
+    private TagsRepository tagsRepository;
+    @Autowired
     private final StudentRepository studentRepository;
     @Autowired
     private final SubjectRepository subjectRepository;
@@ -73,6 +75,28 @@ public class SummaryService {
         summary.setStudent(student);
         summary.setSubject(subject);
         summary.setDatahora(LocalDateTime.now());
+        summary.setPublico(dto.publico() == null ? Boolean.TRUE : dto.publico());
+
+        if (dto.tagsIds() != null && !dto.tagsIds().isEmpty()) {
+            var tagsById = tagsRepository.findAllById(dto.tagsIds())
+                    .stream()
+                    .collect(java.util.stream.Collectors.toMap(Tags::getId, tag -> tag));
+
+            for (Long tagId : dto.tagsIds()) {
+                Tags tag = tagsById.get(tagId);
+                if (tag == null) {
+                    throw new RuntimeException("Tag não encontrada: " + tagId);
+                }
+                if (!Boolean.TRUE.equals(tag.getAtivo())) {
+                    throw new RuntimeException("Tag inativa: " + tagId);
+                }
+
+                TagSummary link = new TagSummary();
+                link.setSummary(summary);
+                link.setTag(tag);
+                summary.getTagLinks().add(link);
+            }
+        }
 
         try {
             summaryRepository.save(summary);
@@ -96,6 +120,12 @@ public class SummaryService {
             totalCurtidas = likesService.contarCurtidas(summary);
         }
 
+        var tags = summary.getTagLinks()
+                .stream()
+                .map(link -> link.getTag() != null ? link.getTag().getName() : null)
+                .filter(name -> name != null)
+                .toList();
+
         return new SummaryGetResponseDTO(
                 summary.getStudent().getId(),
                 summary.getId(),
@@ -106,7 +136,8 @@ public class SummaryService {
                 totalReports,
                 summary.getPublico(),
                 summary.getAtivo(),
-                totalCurtidas
+                totalCurtidas,
+                tags
         );
     }
 
@@ -120,6 +151,11 @@ public class SummaryService {
         }
 
         String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+        var tags = summary.getTagLinks()
+                .stream()
+                .map(link -> link.getTag() != null ? link.getTag().getName() : null)
+                .filter(name -> name != null)
+                .toList();
 
         return new SummaryListResponseDTO(
                 summary.getStudent().getId(),
@@ -133,7 +169,8 @@ public class SummaryService {
                 totalReports,
                 summary.getPublico(),
                 summary.getAtivo(),
-                totalCurtidas
+                totalCurtidas,
+                tags
         );
     }
 

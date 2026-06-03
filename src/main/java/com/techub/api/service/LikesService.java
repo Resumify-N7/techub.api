@@ -98,6 +98,10 @@ public class LikesService {
 
         Long subjectId = summary.getSubject() != null ? summary.getSubject().getId() : null;
         String subjectNome = summary.getSubject() != null ? summary.getSubject().getName() : null;
+        List<String> tags = summary.getTagLinks().stream()
+            .map(link -> link.getTag() != null ? link.getTag().getName() : null)
+            .filter(name -> name != null)
+            .toList();
 
         return new SummaryListResponseDTO(
             ((Number) linha[1]).longValue(),
@@ -111,7 +115,8 @@ public class LikesService {
             linha[6] == null ? null : ((Number) linha[6]).intValue(),
             (Boolean) linha[7],
             (Boolean) linha[8],
-            ((Number) linha[9]).longValue()
+            ((Number) linha[9]).longValue(),
+            tags
         );
         }
 

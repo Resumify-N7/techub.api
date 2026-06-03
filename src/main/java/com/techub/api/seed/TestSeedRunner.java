@@ -118,8 +118,10 @@ public class TestSeedRunner implements CommandLineRunner {
                 summaryService.saveSummary(
                         new SummaryCreateRequestDTO(
                                 "summary" + (i + 1) + "Title" + j,
-                    "summaryContent" + (i + 1) + j + " para o student" + (i + 1) + ".",
-                    subject.getId()
+                "summaryContent" + (i + 1) + j + " para o student" + (i + 1) + ".",
+                subject.getId(),
+                        true,
+                        null
                         ),
                         student.getId()
                 );
