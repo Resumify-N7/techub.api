@@ -71,6 +71,10 @@ public class FeedService {
 
         private SummaryListResponseDTO toListResponse(Summary summary) {
                 String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+                List<String> tags = summary.getTagLinks().stream()
+                        .map(link -> link.getTag() != null ? link.getTag().getName() : null)
+                        .filter(name -> name != null)
+                        .toList();
 
                 return new SummaryListResponseDTO(
                                 summary.getStudent().getId(),
@@ -84,7 +88,8 @@ public class FeedService {
                                 summary.getReports(),
                                 summary.getPublico(),
                                 summary.getAtivo(),
-                                null
+                                null,
+                                tags
                 );
         }
 }

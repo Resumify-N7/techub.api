@@ -19,8 +19,8 @@ public class SummarySpecification {
     public static Specification<Summary> byTagId(Long tagId) {
         return (root, query, cb) -> {
             if (tagId == null) return null;
-            var tags = root.join("tags");
-            return cb.equal(tags.get("id"), tagId);
+            var tagLinks = root.join("tagLinks");
+            return cb.equal(tagLinks.get("tag").get("id"), tagId);
         };
     }
 

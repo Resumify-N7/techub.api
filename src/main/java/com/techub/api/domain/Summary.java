@@ -48,9 +48,8 @@ public class Summary extends BaseEntity {
     @JsonIgnore
     private List<Favorites> favorites = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(name = "tb_resumo_tags",
-            joinColumns = @JoinColumn(name = "resumo_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id"))
-    private List<Tags> tags = new ArrayList<>();
+        // Many-to-many via explicit join entity `TagSummary` (table: tags_resumos)
+        @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
+        @JsonIgnore
+        private List<TagSummary> tagLinks = new ArrayList<>();
 }

@@ -21,7 +21,7 @@ public class Tags extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "tags")
+    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<Summary> summaries = new ArrayList<>();
+    private List<TagSummary> tagLinks = new ArrayList<>();
 }

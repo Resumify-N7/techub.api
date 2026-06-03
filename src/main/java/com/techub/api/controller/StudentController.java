@@ -2,28 +2,31 @@ package com.techub.api.controller;
 
 import com.techub.api.domain.Student;
 import com.techub.api.dto.CourseChangeDTO;
+import com.techub.api.dto.StudentGetDTO;
 import com.techub.api.dto.UserLoginDataDTO;
 import com.techub.api.dto.UserUpdateStudentRequestDTO;
+import com.techub.api.repository.StudentRepository;
 import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/student")
 public class StudentController {
 
-    @Autowired
-    private StudentService studentService;
+    final private StudentService studentService;
+    final private StudentRepository studentRepository;
+    final private CurrentUserService currentUserService;
 
-    @Autowired
-    private CurrentUserService currentUserService;
+    public StudentController(StudentService studentService, StudentRepository studentRepository, CurrentUserService currentUserService){
+        this.studentService = studentService;
+        this.studentRepository = studentRepository;
+        this.currentUserService = currentUserService;
+    }
 
     @GetMapping("/pontuacao/{id}")
     public Integer obterPontuacao(@PathVariable Long id){ return studentService.obter_pontuacao(id); }
@@ -40,11 +43,27 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    public Student busarPerfilId(@PathVariable Long id) { return studentService.buscar_perfilId(id); }
+    public StudentGetDTO busarPerfilId(@PathVariable Long id) {
+        return studentService.buscar_perfilId(id);
+    }
 
     @GetMapping("/me")
-    public Student busarPerfilToken() {
-        return currentUserService.getCurrentStudent();
+    public StudentGetDTO busarPerfilToken() {
+        Student me = currentUserService.getCurrentStudent();
+        return new StudentGetDTO(
+                me.getAtivo(),
+                me.getId(),
+                me.getNome(),
+                me.getSemestre(),
+                me.getBio(),
+                me.getAvatar(),
+                me.getCourse(),
+                me.getPontuacao(),
+                me.getSeguindoCurrentUser(),
+                me.getSeguidoPeloCurrentUser(),
+                studentRepository.countFollowers(me.getId()),
+                studentRepository.countFollowing(me.getId())
+        );
     }
 
     @PatchMapping("/{id}")
