@@ -5,7 +5,8 @@ import com.techub.api.domain.Favorites;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
-import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.dto.SummaryGetResponseDTO;
+import com.techub.api.dto.TagResponseDTO;
 import com.techub.api.repository.BadgeRepository;
 import com.techub.api.repository.FavoritesRepository;
 import com.techub.api.repository.LikesRepository;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class LikesService {
@@ -80,7 +82,7 @@ public class LikesService {
         return likesRepository.countBySummary(summary);
     }
 
-    public List<SummaryListResponseDTO> getRanking(int limit) {
+    public List<SummaryGetResponseDTO> getRanking(int limit) {
         // Busca os resumos ordenados por curtidas
         List<Object[]> resultado = likesRepository.findRanking();
 
@@ -91,33 +93,42 @@ public class LikesService {
                 .toList();
     }
 
-        private SummaryListResponseDTO toRankingResponse(Object[] linha) {
-        Long summaryId = ((Number) linha[0]).longValue();
-        Summary summary = summaryRepository.findById(summaryId)
-            .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
+        private SummaryGetResponseDTO toRankingResponse(Object[] linha) {
+            Long summaryId = ((Number) linha[0]).longValue();
+            Summary summary = summaryRepository.findById(summaryId)
+                .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        Long subjectId = summary.getSubject() != null ? summary.getSubject().getId() : null;
-        String subjectNome = summary.getSubject() != null ? summary.getSubject().getName() : null;
-        List<String> tags = summary.getTagLinks().stream()
-            .map(link -> link.getTag() != null ? link.getTag().getName() : null)
-            .filter(name -> name != null)
-            .toList();
+            Long subjectId = summary.getSubject() != null ? summary.getSubject().getId() : null;
+            String subjectNome = summary.getSubject() != null ? summary.getSubject().getName() : null;
+            var tags = summary.getTagLinks()
+                .stream()
+                .map(link -> {
+                    var tag = link.getTag();
+                    if (tag == null) return null;
 
-        return new SummaryListResponseDTO(
-            ((Number) linha[1]).longValue(),
-            (String) linha[2],
-            (String) linha[3],
-            subjectId,
-            subjectNome,
-            summaryId,
-            (String) linha[4],
-            (String) linha[5],
-            linha[6] == null ? null : ((Number) linha[6]).intValue(),
-            (Boolean) linha[7],
-            (Boolean) linha[8],
-            ((Number) linha[9]).longValue(),
-            tags
-        );
+                    return new TagResponseDTO(
+                            tag.getId(),
+                            tag.getName()
+                    );
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+            return new SummaryGetResponseDTO(
+                    summaryId,
+                    ((Number) linha[1]).longValue(),
+                    (String) linha[2],
+                    (String) linha[3],
+                    subjectId,
+                    subjectNome,
+                    (String) linha[4],
+                    (String) linha[5],
+                    linha[6] == null ? null : ((Number) linha[6]).intValue(),
+                    (Boolean) linha[7],
+                    (Boolean) linha[8],
+                    ((Number) linha[9]).longValue(),
+                    tags
+            );
         }
 
     private void concederBadgeSeNecessario(Summary summary) {

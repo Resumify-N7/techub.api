@@ -2,7 +2,8 @@ package com.techub.api.service;
 
 import com.techub.api.domain.Favorites;
 import com.techub.api.domain.Summary;
-import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.dto.SummaryGetResponseDTO;
+import com.techub.api.dto.TagResponseDTO;
 import com.techub.api.repository.FavoritesRepository;
 import com.techub.api.repository.LikesRepository;
 import com.techub.api.repository.ReportRepository;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class FavoritesService {
@@ -26,7 +28,7 @@ public class FavoritesService {
     private ReportRepository reportRepository;
 
     @Transactional(readOnly = true)
-    public List<SummaryListResponseDTO> getMyFavorites(Long studentId, int limit) {
+    public List<SummaryGetResponseDTO> getMyFavorites(Long studentId, int limit) {
         int pageSize = Math.max(1, limit);
 
         return favoritesRepository.findByStudentIdAndAtivoTrueOrderByIdDesc(studentId, PageRequest.of(0, pageSize))
@@ -53,22 +55,31 @@ public class FavoritesService {
                 .ifPresent(favoritesRepository::delete);
     }
 
-    private SummaryListResponseDTO toListResponse(Summary summary) {
+    private SummaryGetResponseDTO toListResponse(Summary summary) {
         Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
         Long totalCurtidas = likesRepository.countBySummary(summary);
         String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
-        List<String> tags = summary.getTagLinks().stream()
-            .map(link -> link.getTag() != null ? link.getTag().getName() : null)
-            .filter(name -> name != null)
-            .toList();
+        var tags = summary.getTagLinks()
+                .stream()
+                .map(link -> {
+                    var tag = link.getTag();
+                    if (tag == null) return null;
 
-        return new SummaryListResponseDTO(
+                    return new TagResponseDTO(
+                            tag.getId(),
+                            tag.getName()
+                    );
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new SummaryGetResponseDTO(
+                summary.getId(),
                 summary.getStudent().getId(),
                 summary.getStudent().getNome(),
-                studentUrl,
+                summary.getStudent().getAvatar().getUrl(),
                 summary.getSubject() != null ? summary.getSubject().getId() : null,
                 summary.getSubject() != null ? summary.getSubject().getName() : null,
-                summary.getId(),
                 summary.getTitulo(),
                 summary.getConteudo(),
                 totalReports,

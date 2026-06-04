@@ -2,9 +2,12 @@ package com.techub.api.service;
 
 import com.techub.api.domain.Summary;
 import com.techub.api.dto.FeedDTO;
-import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.dto.SummaryGetResponseDTO;
+import com.techub.api.dto.TagResponseDTO;
+import com.techub.api.repository.ReportRepository;
 import com.techub.api.repository.SummaryRepository;
 import com.techub.api.repository.SummarySpecification;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,15 +15,20 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class FeedService {
 
         private final SummaryRepository summaryRepository;
         private final FollowService followService;
+        private LikesService likesService;
+        private ReportRepository reportRepository;
 
         public FeedService(SummaryRepository summaryRepository,
-                           FollowService followService) {
+                           FollowService followService,
+                           LikesService likesService,
+                           ReportRepository reportRepository) {
             this.summaryRepository = summaryRepository;
             this.followService = followService;
         }
@@ -41,7 +49,7 @@ public class FeedService {
             );
 
             return new FeedDTO(
-                    summaries.getContent().stream().map(this::toListResponse).toList(),
+                    summaries.getContent().stream().map(this::toResponse).toList(),
                     summaries.getNumber(),
                     summaries.getSize(),
                     summaries.getTotalElements()
@@ -62,34 +70,50 @@ public class FeedService {
         Page<Summary> summaries = summaryRepository.findAll(spec, pageable);
 
         return new FeedDTO(
-                                summaries.getContent().stream().map(this::toListResponse).toList(),
+                summaries.getContent().stream().map(this::toResponse).toList(),
                 summaries.getNumber(),
                 summaries.getSize(),
                 summaries.getTotalElements()
         );
     }
 
-        private SummaryListResponseDTO toListResponse(Summary summary) {
+        private SummaryGetResponseDTO toResponse(Summary summary) {
+
+                Long totalCurtidas = null;
+
+                Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
+
+                if (Boolean.TRUE.equals(summary.getAtivo()) && Boolean.TRUE.equals(summary.getPublico())) {
+                    totalCurtidas = likesService.contarCurtidas(summary);
+                }
                 String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
-                List<String> tags = summary.getTagLinks().stream()
-                        .map(link -> link.getTag() != null ? link.getTag().getName() : null)
-                        .filter(name -> name != null)
+                var tags = summary.getTagLinks()
+                        .stream()
+                        .map(link -> {
+                            var tag = link.getTag();
+                            if (tag == null) return null;
+
+                            return new TagResponseDTO(
+                                    tag.getId(),
+                                    tag.getName()
+                            );
+                        })
+                        .filter(Objects::nonNull)
                         .toList();
 
-                return new SummaryListResponseDTO(
-                                summary.getStudent().getId(),
-                                summary.getStudent().getNome(),
-                                studentUrl,
-                                summary.getSubject().getId(),
-                                summary.getSubject().getName(),
-                                summary.getId(),
-                                summary.getTitulo(),
-                                summary.getConteudo(),
-                                summary.getReports(),
-                                summary.getPublico(),
-                                summary.getAtivo(),
-                                null,
-                                tags
+                return new SummaryGetResponseDTO(summary.getId(),
+                        summary.getStudent().getId(),
+                        summary.getStudent().getNome(),
+                        summary.getStudent().getAvatar().getUrl(),
+                        summary.getSubject() != null ? summary.getSubject().getId() : null,
+                        summary.getSubject() != null ? summary.getSubject().getName() : null,
+                        summary.getTitulo(),
+                        summary.getConteudo(),
+                        totalReports,
+                        summary.getPublico(),
+                        summary.getAtivo(),
+                        totalCurtidas,
+                        tags
                 );
         }
 }

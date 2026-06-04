@@ -3,16 +3,12 @@ package com.techub.api.controller;
 import com.techub.api.domain.Student;
 import com.techub.api.dto.SummaryCreateRequestDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
-import com.techub.api.dto.SummaryListResponseDTO;
 import com.techub.api.dto.SummaryUpdateRequestDTO;
 import com.techub.api.service.CurrentUserService;
-import com.techub.api.service.StudentService;
 import com.techub.api.service.SummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -38,7 +34,7 @@ public class SummaryController {
     }
 
     @GetMapping
-    public List<SummaryListResponseDTO> listar(@RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryGetResponseDTO> listar(@RequestParam(defaultValue = "20") int limit) {
         return service.getAll(limit);
     }
 
@@ -48,14 +44,14 @@ public class SummaryController {
     }
 
     @GetMapping("/me")
-    public List<SummaryListResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryGetResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
         Student student = currentUserService.getCurrentStudent();
 
         return service.getStudentSummary(student.getId(), limit);
     }
 
     @GetMapping("/student/{studentId}")
-    public List<SummaryListResponseDTO> getStudentSummaryByStudentId(
+    public List<SummaryGetResponseDTO> getStudentSummaryByStudentId(
             @PathVariable Long studentId,
             @RequestParam(defaultValue = "20") int limit
     ) {
@@ -63,7 +59,7 @@ public class SummaryController {
     }
 
     @GetMapping("/subject/{subjectId}")
-    public List<SummaryListResponseDTO> getBySubject(@PathVariable Long subjectId,
+    public List<SummaryGetResponseDTO> getBySubject(@PathVariable Long subjectId,
                                                     @RequestParam(defaultValue = "20") int limit) {
         return service.getBySubjectId(subjectId, limit);
     }
