@@ -3,8 +3,10 @@ package com.techub.api.dto;
 import java.util.List;
 
 public record SummaryGetResponseDTO(
-        Long studentId,
         Long summaryId,
+        Long studentId,
+        String studentNome,
+        String studentUrl,
         Long subjectId,
         String subjectNome,
         String titulo,
@@ -13,5 +15,5 @@ public record SummaryGetResponseDTO(
         Boolean publico,
         Boolean ativo,
         Long totalCurtidas,
-        List<String> tags
+        List<TagResponseDTO> tags
 ) {}

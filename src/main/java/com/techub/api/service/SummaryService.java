@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class SummaryService {
@@ -122,48 +123,25 @@ public class SummaryService {
 
         var tags = summary.getTagLinks()
                 .stream()
-                .map(link -> link.getTag() != null ? link.getTag().getName() : null)
-                .filter(name -> name != null)
+                .map(link -> {
+                    var tag = link.getTag();
+                    if (tag == null) return null;
+
+                    return new TagResponseDTO(
+                        tag.getId(),
+                        tag.getName()
+                    );
+                })
+                .filter(Objects::nonNull)
                 .toList();
 
         return new SummaryGetResponseDTO(
-                summary.getStudent().getId(),
                 summary.getId(),
-            summary.getSubject() != null ? summary.getSubject().getId() : null,
-            summary.getSubject() != null ? summary.getSubject().getName() : null,
-                summary.getTitulo(),
-                summary.getConteudo(),
-                totalReports,
-                summary.getPublico(),
-                summary.getAtivo(),
-                totalCurtidas,
-                tags
-        );
-    }
-
-    private SummaryListResponseDTO toListResponse(Summary summary, boolean includeLikes) {
-        Long totalCurtidas = null;
-
-        Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
-
-        if (includeLikes && Boolean.TRUE.equals(summary.getAtivo()) && Boolean.TRUE.equals(summary.getPublico())) {
-            totalCurtidas = likesService.contarCurtidas(summary);
-        }
-
-        String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
-        var tags = summary.getTagLinks()
-                .stream()
-                .map(link -> link.getTag() != null ? link.getTag().getName() : null)
-                .filter(name -> name != null)
-                .toList();
-
-        return new SummaryListResponseDTO(
                 summary.getStudent().getId(),
                 summary.getStudent().getNome(),
-                studentUrl,
-            summary.getSubject() != null ? summary.getSubject().getId() : null,
-            summary.getSubject() != null ? summary.getSubject().getName() : null,
-                summary.getId(),
+                summary.getStudent().getAvatar().getUrl(),
+                summary.getSubject() != null ? summary.getSubject().getId() : null,
+                summary.getSubject() != null ? summary.getSubject().getName() : null,
                 summary.getTitulo(),
                 summary.getConteudo(),
                 totalReports,
@@ -175,13 +153,13 @@ public class SummaryService {
     }
 
     @Transactional(readOnly = true)
-    public List<SummaryListResponseDTO> getAll(int limit) {
+    public List<SummaryGetResponseDTO> getAll(int limit) {
         int pageSize = Math.max(1, limit);
 
         return summaryRepository.findActive(PageRequest.of(0, pageSize))
                 .getContent()
                 .stream()
-                .map(summary -> toListResponse(summary, true))
+                .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
@@ -214,7 +192,7 @@ public class SummaryService {
     }
 
         @Transactional(readOnly = true)
-        public List<SummaryListResponseDTO> getStudentSummary(Long id, int limit){
+        public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
             Student student = studentService.resolveStudentByIdOrUserId(id);
 
         int pageSize = Math.max(1, limit);
@@ -222,12 +200,12 @@ public class SummaryService {
         return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
             .getContent()
                 .stream()
-                    .map(summary -> toListResponse(summary, true))
+                    .map(summary -> toResponse(summary, true))
                 .toList();
     }
 
         @Transactional(readOnly = true)
-        public List<SummaryListResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
+        public List<SummaryGetResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
             Student student = studentRepository.findById(studentId)
                     .orElseThrow(() -> new ResponseStatusException(
                             org.springframework.http.HttpStatus.NOT_FOUND,
@@ -239,7 +217,7 @@ public class SummaryService {
             return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
                     .getContent()
                     .stream()
-                    .map(summary -> toListResponse(summary, true))
+                    .map(summary -> toResponse(summary, true))
                     .toList();
         }
 
@@ -247,20 +225,49 @@ public class SummaryService {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
+        Subject subject = subjectRepository.findById(dto.materiaId())
+                        .orElseThrow(() -> new RuntimeException("Erro ao encontrar a materia"));
+
+        existing.getTagLinks().clear();
+        summaryRepository.saveAndFlush(existing);
+        if (dto.tags() != null && !dto.tags().isEmpty()) {
+
+            var tagsById = tagsRepository.findAllById(dto.tags())
+                    .stream()
+                    .collect(java.util.stream.Collectors.toMap(Tags::getId, tag -> tag));
+
+            for (Long tagId : dto.tags()) {
+                Tags tag = tagsById.get(tagId);
+                if (tag == null) {
+                    throw new RuntimeException("Tag não encontrada: " + tagId);
+                }
+                if (!Boolean.TRUE.equals(tag.getAtivo())) {
+                    throw new RuntimeException("Tag inativa: " + tagId);
+                }
+
+                TagSummary link = new TagSummary();
+                link.setSummary(existing);
+                link.setTag(tag);
+                existing.getTagLinks().add(link);
+            }
+        }
+
         existing.setTitulo(dto.titulo());
         existing.setConteudo(dto.conteudo());
+        existing.setSubject(subject);
+        existing.setPublico(dto.publico());
 
         summaryRepository.save(existing);
         return toResponse(existing, true);
     }
 
-    public List<SummaryListResponseDTO> getBySubjectId(Long subjectId, int limit) {
+    public List<SummaryGetResponseDTO> getBySubjectId(Long subjectId, int limit) {
         int pageSize = Math.max(1, limit);
 
         return summaryRepository.findBySubjectIdAndAtivoTrue(subjectId, PageRequest.of(0, pageSize))
                 .getContent()
                 .stream()
-                .map(summary -> toListResponse(summary, true))
+                .map(summary -> toResponse(summary, true))
                 .toList();
     }
 

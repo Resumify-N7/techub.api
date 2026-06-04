@@ -1,7 +1,7 @@
 package com.techub.api.controller;
 
 import com.techub.api.domain.Student;
-import com.techub.api.dto.SummaryListResponseDTO;
+import com.techub.api.dto.SummaryGetResponseDTO;
 import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.FavoritesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class FavoritesController {
     private CurrentUserService currentUserService;
 
     @GetMapping("/me")
-    public ResponseEntity<List<SummaryListResponseDTO>> meusFavoritos(@RequestParam(defaultValue = "20") int limit) {
+    public ResponseEntity<List<SummaryGetResponseDTO>> meusFavoritos(@RequestParam(defaultValue = "20") int limit) {
         Student me = currentUserService.getCurrentStudent();
         return ResponseEntity.ok(favoritesService.getMyFavorites(me.getId(), limit));
     }
