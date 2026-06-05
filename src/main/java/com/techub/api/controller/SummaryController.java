@@ -84,6 +84,7 @@ public class SummaryController {
         service.atualizar_status(id);
         return ResponseEntity.ok("Sucesso ao atualizar o status do Resumo");
     }
+
     @PatchMapping("/reportar/{id}")
     public ResponseEntity<?> reportar(@PathVariable Long id) {
         var student = currentUserService.getCurrentStudent();

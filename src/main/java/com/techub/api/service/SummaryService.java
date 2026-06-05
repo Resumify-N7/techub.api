@@ -5,6 +5,7 @@ import com.techub.api.dto.*;
 import com.techub.api.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,29 +17,33 @@ import java.util.Objects;
 @Service
 public class SummaryService {
 
-    @Autowired
-    private SummaryRepository summaryRepository;
-    @Autowired
-    private LikesService likesService;
-    @Autowired
-    private ReportRepository reportRepository;
-    @Autowired
-    private TagsRepository tagsRepository;
-    @Autowired
+    private final SummaryRepository summaryRepository;
+    private final LikesService likesService;
+    private final ReportRepository reportRepository;
+    private final TagsRepository tagsRepository;
     private final StudentRepository studentRepository;
-    @Autowired
     private final SubjectRepository subjectRepository;
-    @Autowired
     private final StudentService studentService;
+    private final CurrentUserService currentUserService;
 
-    public SummaryService(SummaryRepository summaryRepository,
-                          StudentRepository studentRepository,
-                          SubjectRepository subjectRepository,
-                          StudentService studentService) {
+    public SummaryService(
+            SummaryRepository summaryRepository,
+            LikesService likesService,
+            ReportRepository reportRepository,
+            TagsRepository tagsRepository,
+            StudentRepository studentRepository,
+            SubjectRepository subjectRepository,
+            StudentService studentService,
+            CurrentUserService currentUserService
+    ) {
         this.summaryRepository = summaryRepository;
+        this.likesService = likesService;
+        this.reportRepository = reportRepository;
+        this.tagsRepository = tagsRepository;
         this.studentRepository = studentRepository;
         this.subjectRepository = subjectRepository;
         this.studentService = studentService;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
@@ -102,6 +107,7 @@ public class SummaryService {
         try {
             summaryRepository.save(summary);
             return new SummaryCreateResponseDTO(
+                    summary.getId(),
                     student.getId(),
                     subject.getId(),
                     summary.getTitulo(),
@@ -188,38 +194,58 @@ public class SummaryService {
     public SummaryGetResponseDTO getById(Long id) {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
+
+        Student student = currentUserService.getCurrentStudent();
+        if (Boolean.FALSE.equals(summary.getPublico())
+                && !summary.getStudent().getId().equals(student.getId())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Este resumo é privado"
+            );
+        }
+        if (summary.getAtivo().equals(Boolean.FALSE)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Este resumo esta desativado"
+            );
+        }
+
         return toResponse(summary, true);
     }
 
-        @Transactional(readOnly = true)
-        public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
-            Student student = studentService.resolveStudentByIdOrUserId(id);
+    @Transactional(readOnly = true)
+    public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
+        Student student = studentService.resolveStudentByIdOrUserId(id);
+
+    int pageSize = Math.max(1, limit);
+
+    return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
+        .getContent()
+            .stream()
+                .map(summary -> toResponse(summary, true))
+            .filter(item -> Boolean.TRUE.equals(item.ativo()))
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SummaryGetResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Estudante não encontrado"
+                ));
 
         int pageSize = Math.max(1, limit);
 
         return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
-            .getContent()
+                .getContent()
                 .stream()
-                    .map(summary -> toResponse(summary, true))
+                .map(summary -> toResponse(summary, true))
+                .filter((item) -> Boolean.TRUE.equals(item.publico()))
                 .toList();
     }
-
-        @Transactional(readOnly = true)
-        public List<SummaryGetResponseDTO> getStudentSummaryByStudentId(Long studentId, int limit) {
-            Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new ResponseStatusException(
-                            org.springframework.http.HttpStatus.NOT_FOUND,
-                            "Estudante não encontrado"
-                    ));
-
-            int pageSize = Math.max(1, limit);
-
-            return summaryRepository.findByStudentIdAndAtivoTrue(student.getId(), PageRequest.of(0, pageSize))
-                    .getContent()
-                    .stream()
-                    .map(summary -> toResponse(summary, true))
-                    .toList();
-        }
 
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {
         Summary existing = summaryRepository.findById(id)
