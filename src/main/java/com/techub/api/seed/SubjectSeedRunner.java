@@ -5,10 +5,12 @@ import com.techub.api.domain.Subject;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.SubjectRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Order(3)
 public class SubjectSeedRunner implements CommandLineRunner {
 
     private final SubjectRepository subjectRepository;

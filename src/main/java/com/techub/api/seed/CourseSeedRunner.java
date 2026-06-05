@@ -6,10 +6,12 @@ import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.UniversityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Order(2)
 public class CourseSeedRunner implements CommandLineRunner {
 
     private final CourseRepository courseRepository;
@@ -26,8 +28,8 @@ public class CourseSeedRunner implements CommandLineRunner {
 
     @Override @Transactional
     public void run(String... args)  {
-        University univ = universityRepository.findById(1L)
-                .orElseThrow(()-> new RuntimeException("Erro ao buscar universidade"));
+        University univ = universityRepository.findByNameIgnoreCase("Fatec Itaquera")
+                .orElseThrow(() -> new RuntimeException("Universidade não encontrada"));
         String baseCourse = "DSM";
         String baseCourseDescription = "Desenvolvimento de Software Multiplataforma!";
 

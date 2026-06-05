@@ -1,30 +1,16 @@
-# Maven/Java build output
 /target/
-
-# Maven wrapper runtime files (keep .mvn/wrapper in repo)
 .mvn/timing.properties
-
-# Logs
 *.log
 logs/
-
-# IDE and editor files
 /.idea/
 *.iml
 .vscode/
-
-# OS files
 .DS_Store
 Thumbs.db
-
-# Environment/local config
 .env
 .env.*
 !.env.example
-
-# Temporary files
 *.tmp
 *.swp
-
-# Local study docs
 /docs/
+.env

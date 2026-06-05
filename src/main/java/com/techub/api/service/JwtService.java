@@ -1,5 +1,8 @@
 package com.techub.api.service;
 
+import com.techub.api.dto.PendingStudentRegistrationDTO;
+import com.techub.api.dto.UserCreateStudentRequestDTO;
+import com.techub.api.exception.EmailAlredyExistsExeception;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -9,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class JwtService {
@@ -24,6 +29,9 @@ public class JwtService {
 
     @Value("${security.jwt.expiration-time}")
     private long jwtExpiration; // 60 * 60
+
+    @Value("${EMAIL_CONFIRMATION_EXPIRATION}")
+    private long pedingRegitrationExperation;
 
     public String generateToken(String email){
         return Jwts
@@ -69,5 +77,45 @@ public class JwtService {
     private Boolean isTokenExpired(String token){
         Date expiration = getExpirationTime(token);
         return expiration.before(new Date());
+    }
+
+    public String generatePendingStudentRegistration(
+            PendingStudentRegistrationDTO dto
+    ){
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("nome", dto.nome());
+        claims.put("email", dto.email());
+        claims.put("senhaHash", dto.senha());
+        claims.put("semestre", dto.semestre());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(dto.email())
+                .setIssuedAt(new Date())
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + pedingRegitrationExperation)
+                )
+                .signWith(getSignUpKey())
+                .compact();
+    }
+
+    public PendingStudentRegistrationDTO extractPendingStudentRegistration(
+            String token
+    ) {
+
+        var claims = Jwts
+                .parserBuilder()
+                .setSigningKey(getSignUpKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return new PendingStudentRegistrationDTO(
+                claims.get("nome", String.class),
+                claims.get("email", String.class),
+                claims.get("senhaHash", String.class),
+                claims.get("semestre", Integer.class)
+        );
     }
 }

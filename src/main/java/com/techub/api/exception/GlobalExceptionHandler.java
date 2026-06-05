@@ -31,7 +31,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    //para mostar mensagem de erro
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
         return ResponseEntity
@@ -44,4 +43,21 @@ public class GlobalExceptionHandler {
                         )
                 );
     }
+
+    @ExceptionHandler(EmailSendException.class)
+    public ResponseEntity<ErrorResponse> EmailSendException(EmailSendException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ErrorResponse(
+                        500,
+                        "SEND_ERROR_EMAIL",
+                        ex.getMessage()
+                )
+        );
+    }
+
+    @ExceptionHandler(DominioEmailInvalidoException.class)
+    public ResponseEntity<String> handleDominioInvalido(DominioEmailInvalidoException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
 }
