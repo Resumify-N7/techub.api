@@ -2,6 +2,9 @@ package com.techub.api.service;
 
 import com.techub.api.domain.*;
 import com.techub.api.dto.*;
+import com.techub.api.email.EmailSender;
+import com.techub.api.email.EmailTemplate;
+import com.techub.api.exception.DominioEmailInvalidoException;
 import com.techub.api.exception.EmailAlredyExistsExeception;
 import com.techub.api.repository.ADMRepository;
 import com.techub.api.repository.CourseRepository;
@@ -19,22 +22,40 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final ADMRepository admRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final CourseRepository courseRepository;
+    private final AvatarService avatarService;
+    private final EmailSender emailSender;
+    private final EmailTemplate emailTemplate;
+    private final CurrentUserService currentUserService;
+    private final JwtService jwtService;
 
-    @Autowired
-    private ADMRepository admRepository;
+    public UserService(
+        UserRepository userRepository,
+        ADMRepository admRepository,
+        PasswordEncoder passwordEncoder,
+        CourseRepository courseRepository,
+        AvatarService avatarService,
+        EmailSender emailSender,
+        EmailTemplate emailTemplate,
+        CurrentUserService currentUserService,
+        JwtService jwtService
+    ){
+        this.userRepository = userRepository;
+        this.admRepository = admRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.courseRepository = courseRepository;
+        this.avatarService = avatarService;
+        this.emailSender = emailSender;
+        this.emailTemplate = emailTemplate;
+        this.currentUserService = currentUserService;
+        this.jwtService = jwtService;
+    }
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private CourseRepository courseRepository;
-
-    @Autowired
-    private AvatarService avatarService;
-
-    public User criarUsuario(User user) {
+    public User criarUsuario(User user, Boolean passwordAlreadyHashed) {
 
         user.setAtivo(true);
 
@@ -43,8 +64,10 @@ public class UserService {
             throw new EmailAlredyExistsExeception();
         }
 
-        // hash da senha
-        String senhaHash = passwordEncoder.encode(user.getSenha());
+        String senhaHash = user.getSenha();
+        if(!passwordAlreadyHashed){
+            senhaHash = passwordEncoder.encode(user.getSenha());
+        }
         user.setSenha(senhaHash);
 
         // salva
@@ -52,7 +75,59 @@ public class UserService {
     }
 
     @Transactional
+    public void sendEmailForPedingRegistrationStudent(
+            PendingStudentRegistrationDTO dto
+    ){
+        validarDominioInstitucional(dto.email());
+
+        if (userRepository.existsByEmail(dto.email())) {
+            throw new EmailAlredyExistsExeception();
+        }
+
+        String senhaHash = passwordEncoder.encode(dto.senha());
+
+        String token = jwtService.generatePendingStudentRegistration(new PendingStudentRegistrationDTO(
+                dto.nome(),
+                dto.email(),
+                senhaHash,
+                dto.semestre()
+        ));
+        String confirmationLink =
+                "http://localhost:5173/confirm-email?token=" + token;
+
+        emailSender.send(
+                dto.email(),
+                "Confirme seu cadastro",
+                emailTemplate.confirmationTemplate(
+                        dto.nome(),
+                        confirmationLink
+                )
+        );
+    }
+    private static final List<String> DOMINIOS_PERMITIDOS = List.of(
+            "@aluno.cps.sp.gov.br",
+            "@fatec.sp.gov.br",
+            "@cps.sp.gov.br"
+    );
+
+    private void validarDominioInstitucional(String email) {
+        String emailLower = email.toLowerCase();
+        boolean valido = DOMINIOS_PERMITIDOS.stream().anyMatch(emailLower::endsWith);
+        if (!valido) {
+            throw new DominioEmailInvalidoException(); // cria essa exception
+        }
+    }
+
+
+    @Transactional
     public User cadastrarAluno(UserCreateStudentRequestDTO dto){
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        if(currentUser.getRole() != Role.ADM){
+            throw new RuntimeException("Acesso negado a essa rota!");
+        }
+
         User user = new User();
         user.setEmail(dto.email());
         user.setSenha(dto.senha());
@@ -76,7 +151,34 @@ public class UserService {
         user.setStudent(student);
         user.setRole(Role.ALUNO);
 
-        return criarUsuario(user);
+        return criarUsuario(user, false);
+    }
+
+    @Transactional
+    public User cadastrarAlunoViaConfirmacaoEmail(UserCreateStudentRequestDTO dto) {
+        User user = new User();
+        user.setEmail(dto.email());
+        user.setSenha(dto.senha());
+
+        Student student = new Student();
+        student.setNome(dto.nome());
+        student.setBio(dto.bio());
+        student.setSemestre(dto.semestre());
+
+        if (dto.avatarUrl() != null && !dto.avatarUrl().isBlank()) {
+            student.setAvatar(avatarService.buscarPorUrl(dto.avatarUrl()));
+        } else {
+            student.setAvatar(avatarService.getOrCreateDefault());
+        }
+
+        Course course = courseRepository.findTopByOrderByIdAsc()
+                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));
+
+        student.setCourse(course);
+        user.setStudent(student);
+        user.setRole(Role.ALUNO);
+
+        return criarUsuario(user, true);
     }
 
     @Transactional
@@ -92,7 +194,7 @@ public class UserService {
 
         user.setAdm(admSalvo);
         user.setRole(Role.ADM);
-        return criarUsuario(user);
+        return criarUsuario(user, false);
     }
 
     public void atualizar_dados_login(Long id, UserLoginDataDTO dto) {

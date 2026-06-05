@@ -4,7 +4,9 @@ import com.techub.api.domain.Role;
 import com.techub.api.domain.User;
 
 import com.techub.api.dto.*;
+import com.techub.api.service.JwtService;
 import com.techub.api.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +19,53 @@ import java.util.List;
 @RequestMapping("/user")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final JwtService jwtService;
+
+    public UserController(
+            UserService userService,
+            JwtService jwtService
+        ){
+        this.userService = userService;
+        this.jwtService = jwtService;
+    }
+
+    @PostMapping("/confirm/email")
+    public ResponseEntity<?> criar_aluno_pendente(@Valid @RequestBody PendingStudentRegistrationDTO dto) {
+        userService.sendEmailForPedingRegistrationStudent(dto);
+        return ResponseEntity.ok("Email de confirmação enviado");
+    }
+
+    @PostMapping("/email")
+    public ResponseEntity<UserLoginResponse> confirmEmail(
+            @RequestParam String token,
+            HttpServletResponse response
+    ) {
+        PendingStudentRegistrationDTO dto =
+                jwtService.extractPendingStudentRegistration(token);
+
+        userService.cadastrarAlunoViaConfirmacaoEmail(
+                new UserCreateStudentRequestDTO(
+                        dto.nome(),
+                        dto.email(),
+                        dto.senha(),
+                        dto.semestre(),
+                        null,
+                        null
+                ));
+
+        String sessionToken = jwtService.generateToken(dto.email());
+
+        response.addHeader("Set-Cookie",
+                "accessToken=" + sessionToken +
+                        "; HttpOnly" +
+                        "; Path=/" +
+                        "; Max-Age=3600" +
+                        "; Secure" +
+                        "; SameSite=None"
+        );
+        return ResponseEntity.ok(new UserLoginResponse("Sucesso ao criar o token", sessionToken));
+    }
 
     @PostMapping
     public ResponseEntity<?> criar_usuario_aluno(@Valid @RequestBody UserCreateStudentRequestDTO dto) {
