@@ -1,8 +1,8 @@
 package com.techub.api.service;
 
+import com.techub.api.dto.PendingProfessorRegistrationDTO;
 import com.techub.api.dto.PendingStudentRegistrationDTO;
-import com.techub.api.dto.UserCreateStudentRequestDTO;
-import com.techub.api.exception.EmailAlredyExistsExeception;
+import io.jsonwebtoken.Claims;
 import com.techub.api.exception.TokenExpiradoException;
 import com.techub.api.exception.TokenInvalidoException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -23,31 +23,32 @@ import java.util.Map;
 public class JwtService {
 
     @Value("${security.jwt.secret-key}")
-    private String secretKey; // Keys.secretKeyFor(SignatureAlgorithm.HS256)
+    private String secretKey;
 
-    // decode byte -> key (chave salva em bytes no properties)
     private Key getSignUpKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     @Value("${security.jwt.expiration-time}")
-    private long jwtExpiration; // 60 * 60
+    private long jwtExpiration;
 
     @Value("${EMAIL_CONFIRMATION_EXPIRATION}")
     private long pedingRegitrationExperation;
+
+    @Value("${EMAIL_CONFIRMATION_EXPIRATION_PROFESSOR}")
+    private long pedingRegitrationProfessorExperation;
 
     public String generateToken(String email){
         return Jwts
                 .builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() +  jwtExpiration))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSignUpKey())
                 .compact();
     }
 
-    // Aviso de metodo deprecated
     public String extractEmail(String token){
         return Jwts
                 .parserBuilder()
@@ -77,7 +78,6 @@ public class JwtService {
                 .getExpiration();
     }
 
-
     private Boolean isTokenExpired(String token){
         Date expiration = getExpirationTime(token);
         return expiration.before(new Date());
@@ -104,27 +104,71 @@ public class JwtService {
                 .compact();
     }
 
-    public PendingStudentRegistrationDTO extractPendingStudentRegistration(String token) {
+    public String generatePendingProfessorRegistration(
+            PendingProfessorRegistrationDTO dto
+    ){
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("nome", dto.nome());
+        claims.put("email", dto.email());
+        claims.put("senhaHash", dto.senha());
+        claims.put("subjectId", dto.subjectId());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(dto.email())
+                .setIssuedAt(new Date())
+                .setExpiration(
+                        new Date(System.currentTimeMillis() + pedingRegitrationProfessorExperation)
+                )
+                .signWith(getSignUpKey())
+                .compact();
+    }
+
+    private Claims extractPendingRegistrationClaims(String token) {
         try {
-            var claims = Jwts
+            return Jwts
                     .parserBuilder()
                     .setSigningKey(getSignUpKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
 
-            return new PendingStudentRegistrationDTO(
-                    claims.get("nome", String.class),
-                    claims.get("email", String.class),
-                    claims.get("senhaHash", String.class),
-                    claims.get("semestre", Integer.class)
-            );
-
         } catch (ExpiredJwtException e) {
-            throw new TokenExpiradoException("O link de confirmação expirou. Solicite um novo.");
+            throw new TokenExpiradoException(
+                    "O link de confirmação expirou. Solicite um novo."
+            );
         } catch (JwtException e) {
-            throw new TokenInvalidoException("Token inválido ou malformado.");
+            throw new TokenInvalidoException(
+                    "Token inválido ou malformado."
+            );
         }
+    }
+
+    public PendingStudentRegistrationDTO extractPendingStudentRegistration(
+            String token
+    ) {
+        Claims claims = extractPendingRegistrationClaims(token);
+
+        return new PendingStudentRegistrationDTO(
+                claims.get("nome", String.class),
+                claims.get("email", String.class),
+                claims.get("senhaHash", String.class),
+                claims.get("semestre", Integer.class)
+        );
+    }
+
+    public PendingProfessorRegistrationDTO extractPendingProfessorRegistration(
+            String token
+    ) {
+        Claims claims = extractPendingRegistrationClaims(token);
+
+        return new PendingProfessorRegistrationDTO(
+                claims.get("nome", String.class),
+                claims.get("email", String.class),
+                claims.get("senhaHash", String.class),
+                claims.get("subjectId", Long.class)
+        );
     }
 
     public String extractEmailFromExpiredToken(String token) {

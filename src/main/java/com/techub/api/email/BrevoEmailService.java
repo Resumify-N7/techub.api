@@ -1,5 +1,6 @@
 package com.techub.api.email;
 
+import com.techub.api.exception.DominioEmailInvalidoException;
 import com.techub.api.exception.EmailSendException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -55,4 +56,19 @@ public class BrevoEmailService implements EmailSender {
             throw new EmailSendException("Erro ao enviar email via Brevo: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public void validarDominioInstitucional(String email) throws EmailSendException {
+        String emailLower = email.toLowerCase();
+        boolean valido = DOMINIOS_PERMITIDOS.stream().anyMatch(emailLower::endsWith);
+        if (!valido) {
+            throw new DominioEmailInvalidoException();
+        }
+    }
+
+    private static final List<String> DOMINIOS_PERMITIDOS = List.of(
+            "@aluno.cps.sp.gov.br",
+            "@fatec.sp.gov.br",
+            "@cps.sp.gov.br"
+    );
 }

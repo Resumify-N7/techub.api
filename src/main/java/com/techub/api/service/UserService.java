@@ -4,11 +4,8 @@ import com.techub.api.domain.*;
 import com.techub.api.dto.*;
 import com.techub.api.email.EmailSender;
 import com.techub.api.email.EmailTemplate;
-import com.techub.api.exception.DominioEmailInvalidoException;
 import com.techub.api.exception.EmailAlredyExistsExeception;
-import com.techub.api.repository.ADMRepository;
-import com.techub.api.repository.CourseRepository;
-import com.techub.api.repository.UserRepository;
+import com.techub.api.repository.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +27,7 @@ public class UserService {
     private final EmailTemplate emailTemplate;
     private final CurrentUserService currentUserService;
     private final JwtService jwtService;
+    private final SubjectRepository subjectRepository;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -43,7 +41,8 @@ public class UserService {
             EmailSender emailSender,
             EmailTemplate emailTemplate,
             CurrentUserService currentUserService,
-            JwtService jwtService
+            JwtService jwtService,
+            SubjectRepository subjectRepository
     ) {
         this.userRepository = userRepository;
         this.admRepository = admRepository;
@@ -54,6 +53,7 @@ public class UserService {
         this.emailTemplate = emailTemplate;
         this.currentUserService = currentUserService;
         this.jwtService = jwtService;
+        this.subjectRepository = subjectRepository;
     }
 
     public User criarUsuario(User user, boolean passwordAlreadyHashed) {
@@ -72,7 +72,7 @@ public class UserService {
 
     @Transactional
     public void sendEmailForPedingRegistrationStudent(PendingStudentRegistrationDTO dto) {
-        validarDominioInstitucional(dto.email());
+        emailSender.validarDominioInstitucional(dto.email());
 
         if (userRepository.existsByEmail(dto.email())) {
             throw new EmailAlredyExistsExeception();
@@ -84,12 +84,12 @@ public class UserService {
                 new PendingStudentRegistrationDTO(dto.nome(), dto.email(), senhaHash, dto.semestre())
         );
 
-        String confirmationLink = frontendUrl + "/confirm-email?token=" + token;
+        String confirmationLink = frontendUrl + "/confirm-email/student?token=" + token;
 
         emailSender.send(
                 dto.email(),
-                "Confirme seu cadastro",
-                emailTemplate.confirmationTemplate(dto.nome(), confirmationLink)
+                "Confirme seu cadastro no Resumify",
+                emailTemplate.confirmationTemplate(dto.nome(), confirmationLink, "15 minutos")
         );
     }
 
@@ -155,6 +155,58 @@ public class UserService {
         user.setRole(Role.ALUNO);
 
         return criarUsuario(user, false);
+    }
+
+    @Transactional
+    public void sendEmailForPedingRegistrationProfessor(PendingProfessorRegistrationDTO dto) {
+        emailSender.validarDominioInstitucional(dto.email());
+
+        if (userRepository.existsByEmail(dto.email())) {
+            throw new EmailAlredyExistsExeception();
+        }
+
+        if (dto.subjectId() == null) {
+            throw new IllegalArgumentException("Matéria é obrigatória para o convite de professor.");
+        }
+        subjectRepository.findById(dto.subjectId())
+                .orElseThrow(() -> new RuntimeException("Matéria não encontrada."));
+
+        String senhaHash = passwordEncoder.encode(dto.senha());
+        String token = jwtService.generatePendingProfessorRegistration(
+                new PendingProfessorRegistrationDTO(dto.nome(), dto.email(), senhaHash, dto.subjectId())
+        );
+
+        String confirmationLink = frontendUrl + "/confirm-email/professor?token=" + token;
+
+        emailSender.send(
+                dto.email(),
+                "Convite para o Resumify — você foi convidado como professor",
+                emailTemplate.confirmationTemplate(dto.nome(), confirmationLink, "2 dias")
+        );
+    }
+
+    @Transactional
+    public User cadastrarProfessorViaConfirmacaoEmail(PendingProfessorRegistrationDTO dto) {
+        if (userRepository.existsByEmail(dto.email())) {
+            throw new EmailAlredyExistsExeception();
+        }
+
+        Subject subject = subjectRepository.findById(dto.subjectId())
+                .orElseThrow(() -> new RuntimeException("Matéria não encontrada."));
+
+        User user = new User();
+        user.setEmail(dto.email());
+        user.setSenha(dto.senha());
+
+        Professor professor = new Professor();
+        professor.setNome(dto.nome());
+        professor.setSubject(subject);
+        professor.setAvatar(avatarService.getOrCreateDefault());
+
+        user.setProfessor(professor);
+        user.setRole(Role.PROFESSOR);
+
+        return criarUsuario(user, true);
     }
 
     @Transactional
@@ -244,19 +296,5 @@ public class UserService {
             return new UserRoleResponse(user.getStudent().getId(), user.getRole());
         }
         throw new RuntimeException("Não foi possível encontrar o role para este usuário");
-    }
-
-    private static final List<String> DOMINIOS_PERMITIDOS = List.of(
-            "@aluno.cps.sp.gov.br",
-            "@fatec.sp.gov.br",
-            "@cps.sp.gov.br"
-    );
-
-    private void validarDominioInstitucional(String email) {
-        String emailLower = email.toLowerCase();
-        boolean valido = DOMINIOS_PERMITIDOS.stream().anyMatch(emailLower::endsWith);
-        if (!valido) {
-            throw new DominioEmailInvalidoException();
-        }
     }
 }
