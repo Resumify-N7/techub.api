@@ -9,8 +9,7 @@ import com.techub.api.exception.EmailAlredyExistsExeception;
 import com.techub.api.repository.ADMRepository;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.UserRepository;
-import jakarta.validation.constraints.Email;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,17 +31,20 @@ public class UserService {
     private final CurrentUserService currentUserService;
     private final JwtService jwtService;
 
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     public UserService(
-        UserRepository userRepository,
-        ADMRepository admRepository,
-        PasswordEncoder passwordEncoder,
-        CourseRepository courseRepository,
-        AvatarService avatarService,
-        EmailSender emailSender,
-        EmailTemplate emailTemplate,
-        CurrentUserService currentUserService,
-        JwtService jwtService
-    ){
+            UserRepository userRepository,
+            ADMRepository admRepository,
+            PasswordEncoder passwordEncoder,
+            CourseRepository courseRepository,
+            AvatarService avatarService,
+            EmailSender emailSender,
+            EmailTemplate emailTemplate,
+            CurrentUserService currentUserService,
+            JwtService jwtService
+    ) {
         this.userRepository = userRepository;
         this.admRepository = admRepository;
         this.passwordEncoder = passwordEncoder;
@@ -54,30 +56,22 @@ public class UserService {
         this.jwtService = jwtService;
     }
 
-
-    public User criarUsuario(User user, Boolean passwordAlreadyHashed) {
-
+    public User criarUsuario(User user, boolean passwordAlreadyHashed) {
         user.setAtivo(true);
 
-        // valida email
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new EmailAlredyExistsExeception();
         }
 
-        String senhaHash = user.getSenha();
-        if(!passwordAlreadyHashed){
-            senhaHash = passwordEncoder.encode(user.getSenha());
+        if (!passwordAlreadyHashed) {
+            user.setSenha(passwordEncoder.encode(user.getSenha()));
         }
-        user.setSenha(senhaHash);
 
-        // salva
         return userRepository.save(user);
     }
 
     @Transactional
-    public void sendEmailForPedingRegistrationStudent(
-            PendingStudentRegistrationDTO dto
-    ){
+    public void sendEmailForPedingRegistrationStudent(PendingStudentRegistrationDTO dto) {
         validarDominioInstitucional(dto.email());
 
         if (userRepository.existsByEmail(dto.email())) {
@@ -86,45 +80,55 @@ public class UserService {
 
         String senhaHash = passwordEncoder.encode(dto.senha());
 
-        String token = jwtService.generatePendingStudentRegistration(new PendingStudentRegistrationDTO(
-                dto.nome(),
-                dto.email(),
-                senhaHash,
-                dto.semestre()
-        ));
-        String confirmationLink =
-                "http://localhost:5173/confirm-email?token=" + token;
+        String token = jwtService.generatePendingStudentRegistration(
+                new PendingStudentRegistrationDTO(dto.nome(), dto.email(), senhaHash, dto.semestre())
+        );
+
+        String confirmationLink = frontendUrl + "/confirm-email?token=" + token;
 
         emailSender.send(
                 dto.email(),
                 "Confirme seu cadastro",
-                emailTemplate.confirmationTemplate(
-                        dto.nome(),
-                        confirmationLink
-                )
+                emailTemplate.confirmationTemplate(dto.nome(), confirmationLink)
         );
     }
-    private static final List<String> DOMINIOS_PERMITIDOS = List.of(
-            "@aluno.cps.sp.gov.br",
-            "@fatec.sp.gov.br",
-            "@cps.sp.gov.br"
-    );
-
-    private void validarDominioInstitucional(String email) {
-        String emailLower = email.toLowerCase();
-        boolean valido = DOMINIOS_PERMITIDOS.stream().anyMatch(emailLower::endsWith);
-        if (!valido) {
-            throw new DominioEmailInvalidoException(); // cria essa exception
-        }
-    }
-
 
     @Transactional
-    public User cadastrarAluno(UserCreateStudentRequestDTO dto){
-        User currentUser =
-                currentUserService.getCurrentUser();
+    public User cadastrarAlunoViaConfirmacaoEmail(UserCreateStudentRequestDTO dto) {
+        if (userRepository.existsByEmail(dto.email())) {
+            throw new EmailAlredyExistsExeception();
+        }
 
-        if(currentUser.getRole() != Role.ADM){
+        User user = new User();
+        user.setEmail(dto.email());
+        user.setSenha(dto.senha());
+
+        Student student = new Student();
+        student.setNome(dto.nome());
+        student.setBio(dto.bio());
+        student.setSemestre(dto.semestre());
+
+        if (dto.avatarUrl() != null && !dto.avatarUrl().isBlank()) {
+            student.setAvatar(avatarService.buscarPorUrl(dto.avatarUrl()));
+        } else {
+            student.setAvatar(avatarService.getOrCreateDefault());
+        }
+
+        Course course = courseRepository.findTopByOrderByIdAsc()
+                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado no banco. Execute o seed de cursos."));
+
+        student.setCourse(course);
+        user.setStudent(student);
+        user.setRole(Role.ALUNO);
+
+        return criarUsuario(user, true);
+    }
+
+    @Transactional
+    public User cadastrarAluno(UserCreateStudentRequestDTO dto) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (currentUser.getRole() != Role.ADM) {
             throw new RuntimeException("Acesso negado a essa rota!");
         }
 
@@ -144,10 +148,9 @@ public class UserService {
         }
 
         Course course = courseRepository.findTopByOrderByIdAsc()
-                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado no banco."));
 
         student.setCourse(course);
-
         user.setStudent(student);
         user.setRole(Role.ALUNO);
 
@@ -155,34 +158,7 @@ public class UserService {
     }
 
     @Transactional
-    public User cadastrarAlunoViaConfirmacaoEmail(UserCreateStudentRequestDTO dto) {
-        User user = new User();
-        user.setEmail(dto.email());
-        user.setSenha(dto.senha());
-
-        Student student = new Student();
-        student.setNome(dto.nome());
-        student.setBio(dto.bio());
-        student.setSemestre(dto.semestre());
-
-        if (dto.avatarUrl() != null && !dto.avatarUrl().isBlank()) {
-            student.setAvatar(avatarService.buscarPorUrl(dto.avatarUrl()));
-        } else {
-            student.setAvatar(avatarService.getOrCreateDefault());
-        }
-
-        Course course = courseRepository.findTopByOrderByIdAsc()
-                .orElseThrow(() -> new RuntimeException("Curso padrão não encontrado"));
-
-        student.setCourse(course);
-        user.setStudent(student);
-        user.setRole(Role.ALUNO);
-
-        return criarUsuario(user, true);
-    }
-
-    @Transactional
-    public User cadastrarADM(ADMCreateRequestDTO dto){
+    public User cadastrarADM(ADMCreateRequestDTO dto) {
         User user = new User();
         user.setEmail(dto.email());
         user.setSenha(dto.senha());
@@ -199,23 +175,22 @@ public class UserService {
 
     public void atualizar_dados_login(Long id, UserLoginDataDTO dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(("Erro ao buscar usuario!")));
+                .orElseThrow(() -> new RuntimeException("Erro ao buscar usuario!"));
 
-        if(dto.email() != null) { user.setEmail(dto.email()); }
-        if(dto.senha() != null) {  user.setSenha(passwordEncoder.encode(dto.senha())); }
+        if (dto.email() != null) { user.setEmail(dto.email()); }
+        if (dto.senha() != null) { user.setSenha(passwordEncoder.encode(dto.senha())); }
 
         userRepository.save(user);
     }
 
     public List<UserGetResponseDTO> findByAtivoTrue(int limit) {
         int pageSize = Math.max(1, limit);
-
         return userRepository.findActive(PageRequest.of(0, pageSize))
                 .getContent()
                 .stream()
                 .map(user -> new UserGetResponseDTO(
                         user.getId(),
-                        Optional.ofNullable(user.getStudent()).map(s -> s.getId()).orElse(null),
+                        Optional.ofNullable(user.getStudent()).map(Student::getId).orElse(null),
                         user.getEmail(),
                         user.getRole(),
                         user.getCreatedAt(),
@@ -225,13 +200,12 @@ public class UserService {
 
     public List<UserGetResponseDTO> findByAtivoFalse(int limit) {
         int pageSize = Math.max(1, limit);
-
         return userRepository.findInactive(PageRequest.of(0, pageSize))
                 .getContent()
                 .stream()
                 .map(user -> new UserGetResponseDTO(
                         user.getId(),
-                        Optional.ofNullable(user.getStudent()).map(s -> s.getId()).orElse(null),
+                        Optional.ofNullable(user.getStudent()).map(Student::getId).orElse(null),
                         user.getEmail(),
                         user.getRole(),
                         user.getCreatedAt(),
@@ -250,28 +224,39 @@ public class UserService {
     public void deletar(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Erro ao buscar usuario!"));
-
         user.setAtivo(false);
         userRepository.save(user);
     }
 
     @Transactional
-    public void atualizar_status(Long id){
+    public void atualizar_status(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Erro ao procurar usuario"));
-
         user.setAtivo(!user.getAtivo());
         userRepository.save(user);
     }
 
     public UserRoleResponse descobrirRole(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(("Erro ao buscar usuario!")));
+                .orElseThrow(() -> new RuntimeException("Erro ao buscar usuario!"));
 
-        if(user.getStudent() != null) {
+        if (user.getStudent() != null) {
             return new UserRoleResponse(user.getStudent().getId(), user.getRole());
         }
-        throw new RuntimeException("Não foi possivel encontrar o role");
+        throw new RuntimeException("Não foi possível encontrar o role para este usuário");
     }
 
+    private static final List<String> DOMINIOS_PERMITIDOS = List.of(
+            "@aluno.cps.sp.gov.br",
+            "@fatec.sp.gov.br",
+            "@cps.sp.gov.br"
+    );
+
+    private void validarDominioInstitucional(String email) {
+        String emailLower = email.toLowerCase();
+        boolean valido = DOMINIOS_PERMITIDOS.stream().anyMatch(emailLower::endsWith);
+        if (!valido) {
+            throw new DominioEmailInvalidoException();
+        }
+    }
 }

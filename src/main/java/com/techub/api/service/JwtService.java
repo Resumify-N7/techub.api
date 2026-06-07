@@ -3,6 +3,10 @@ package com.techub.api.service;
 import com.techub.api.dto.PendingStudentRegistrationDTO;
 import com.techub.api.dto.UserCreateStudentRequestDTO;
 import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.exception.TokenExpiradoException;
+import com.techub.api.exception.TokenInvalidoException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -100,22 +104,41 @@ public class JwtService {
                 .compact();
     }
 
-    public PendingStudentRegistrationDTO extractPendingStudentRegistration(
-            String token
-    ) {
+    public PendingStudentRegistrationDTO extractPendingStudentRegistration(String token) {
+        try {
+            var claims = Jwts
+                    .parserBuilder()
+                    .setSigningKey(getSignUpKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
-        var claims = Jwts
-                .parserBuilder()
-                .setSigningKey(getSignUpKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+            return new PendingStudentRegistrationDTO(
+                    claims.get("nome", String.class),
+                    claims.get("email", String.class),
+                    claims.get("senhaHash", String.class),
+                    claims.get("semestre", Integer.class)
+            );
 
-        return new PendingStudentRegistrationDTO(
-                claims.get("nome", String.class),
-                claims.get("email", String.class),
-                claims.get("senhaHash", String.class),
-                claims.get("semestre", Integer.class)
-        );
+        } catch (ExpiredJwtException e) {
+            throw new TokenExpiradoException("O link de confirmação expirou. Solicite um novo.");
+        } catch (JwtException e) {
+            throw new TokenInvalidoException("Token inválido ou malformado.");
+        }
+    }
+
+    public String extractEmailFromExpiredToken(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignUpKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims().getSubject(); // JWT expirado ainda tem claims
+        } catch (JwtException e) {
+            return null;
+        }
     }
 }

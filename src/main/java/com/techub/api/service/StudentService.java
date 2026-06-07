@@ -105,6 +105,25 @@ public class StudentService {
         );
     }
 
+    public StudentGetDTO buscar_perfilIdAsAdmin(Long id) {
+        Student student = buscar_por_id(id);
+
+        return new StudentGetDTO(
+                student.getAtivo(),
+                student.getId(),
+                student.getNome(),
+                student.getSemestre(),
+                student.getBio(),
+                student.getAvatar(),
+                student.getCourse(),
+                student.getPontuacao(),
+                null,
+                null,
+                studentRepository.countFollowers(student.getId()),
+                studentRepository.countFollowing(student.getId())
+        );
+    }
+
     public Student buscar_perfilEmail(String email) {
 
         User user = userRepository.findByEmailAndAtivoTrue(email)

@@ -8,6 +8,7 @@ import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.SummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -69,9 +70,16 @@ public class SummaryController {
         return service.findByAtivoFalse(limit);
     }
 
+
     @GetMapping("/{id}")
-    public SummaryGetResponseDTO buscar(@PathVariable Long id) {
-        return service.getById(id);
+    public ResponseEntity<SummaryGetResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getById(id));
+    }
+    // Controller do ADM
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADM')")
+    public ResponseEntity<SummaryGetResponseDTO> getByIdAsAdmin(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getByIdAsAdmin(id));
     }
 
     @PutMapping("/{id}")

@@ -7,7 +7,7 @@ import java.util.List;
 public record SummaryUpdateRequestDTO(
         String titulo,
         String conteudo,
-        Long materiaId,
+        Long summaryId,
         Boolean publico,
         @JsonAlias({"tags_ids", "tags_id"}) List<Long> tags
 )  {}
