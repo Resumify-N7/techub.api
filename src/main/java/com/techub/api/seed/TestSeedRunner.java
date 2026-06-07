@@ -52,7 +52,6 @@ public class TestSeedRunner implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        // Pré-condições: course e subjects devem já existir (criados por seeds de ordem 2 e 3)
         Course dsm = courseRepository.findTopByOrderByIdAsc().orElse(null);
         if (dsm == null) {
             System.err.println("[TestSeedRunner] Nenhum curso encontrado — seed abortado. Execute o CourseSeedRunner primeiro.");
@@ -65,7 +64,6 @@ public class TestSeedRunner implements CommandLineRunner {
             return;
         }
 
-        // Avatar padrão para todos os alunos seed
         Avatar defaultAvatar = avatarRepository.findByUrl("/avatares/default.svg").orElse(null);
 
         List<Student> students = new ArrayList<>();
@@ -81,7 +79,6 @@ public class TestSeedRunner implements CommandLineRunner {
         students.add(maybeCreateStudent("Diego Lima",        "diego.lima@fatec.sp.gov.br",       "senha123", 6, dsm, subjects, defaultAvatar, "/avatares/male-5.svg"));
         students.add(maybeCreateStudent("Fernanda Rocha",    "fernanda.rocha@fatec.sp.gov.br",   "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/female-5.svg"));
 
-        // Remove nulls (alunos que já existiam e foram ignorados)
         List<Student> novos = students.stream().filter(s -> s != null).toList();
 
         setupFollows(novos);
@@ -89,10 +86,7 @@ public class TestSeedRunner implements CommandLineRunner {
         System.out.println("[TestSeedRunner] Seed concluído. " + novos.size() + " aluno(s) criado(s).");
     }
 
-    /**
-     * Cria o aluno apenas se o email ainda não existe no banco.
-     * Retorna null se já existia (idempotência).
-     */
+
     private Student maybeCreateStudent(
             String nome,
             String email,
@@ -108,12 +102,10 @@ public class TestSeedRunner implements CommandLineRunner {
             return null;
         }
 
-        // Resolve o avatar: tenta o preferido, cai no default, cai em null
         Avatar avatar = avatarRepository.findByUrl(preferredAvatarUrl)
                 .or(() -> avatarRepository.findByUrl("/avatares/default.svg"))
                 .orElse(defaultAvatar);
 
-        // Cria o Student primeiro para ter ID antes de criar os Summary
         Student student = new Student();
         student.setNome(nome);
         student.setSemestre(semestre);
@@ -123,7 +115,6 @@ public class TestSeedRunner implements CommandLineRunner {
         student.setAvatar(avatar);
         Student savedStudent = studentRepository.save(student);
 
-        // Cria o User e vincula ao Student
         User user = new User();
         user.setEmail(email);
         user.setSenha(passwordEncoder.encode(senha));
@@ -132,31 +123,23 @@ public class TestSeedRunner implements CommandLineRunner {
         user.setStudent(savedStudent);
         userRepository.save(user);
 
-        // Cria os resumos DEPOIS do student ter ID persistido
         criarResumos(savedStudent, semestre, allSubjects);
 
         return savedStudent;
     }
 
-    /**
-     * Cria resumos para o aluno.
-     * Usa matérias compatíveis com o semestre do aluno.
-     * Cria até RESUMOS_POR_ALUNO resumos, distribuídos entre as matérias disponíveis.
-     */
+
     private void criarResumos(Student student, Integer semestre, List<Subject> allSubjects) {
-        // Filtra matérias que o aluno já cursou (semestre <= semestre do aluno)
         List<Subject> disponiveis = allSubjects.stream()
                 .filter(s -> s.getSemestre() != null && s.getSemestre() <= semestre)
                 .toList();
 
         if (disponiveis.isEmpty()) {
-            // Aluno do 1º semestre pode não ter matérias ainda — usa qualquer uma
             disponiveis = allSubjects.stream().limit(3).toList();
         }
         if (disponiveis.isEmpty()) return;
 
         int total = RESUMOS.length;
-        // Offset por aluno baseado no nome para variar os conteúdos entre alunos
         int offset = Math.abs(student.getNome().hashCode()) % total;
 
         for (int i = 0; i < RESUMOS_POR_ALUNO; i++) {
@@ -168,7 +151,6 @@ public class TestSeedRunner implements CommandLineRunner {
             summary.setConteudo(dados[1]);
             summary.setStudent(student);
             summary.setSubject(materia);
-            // Datas espalhadas para simular atividade ao longo do tempo
             summary.setDatahora(LocalDateTime.now().minusDays(i * 3L));
             summary.setPublico(true);
             summary.setReports(0);
@@ -177,11 +159,6 @@ public class TestSeedRunner implements CommandLineRunner {
             summaryRepository.save(summary);
         }
     }
-
-    /**
-     * Faz todos os alunos novos se seguirem mutuamente.
-     * Ignora exceções (já seguia, etc).
-     */
     private void setupFollows(List<Student> students) {
         for (Student follower : students) {
             for (Student following : students) {

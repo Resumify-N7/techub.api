@@ -4,6 +4,7 @@ import com.techub.api.domain.Avatar;
 import com.techub.api.repository.AvatarRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Order(4)
 public class AvatarSeedRunner implements CommandLineRunner {
 
     private final AvatarRepository avatarRepository;

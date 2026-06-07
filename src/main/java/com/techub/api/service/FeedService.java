@@ -88,7 +88,7 @@ public class FeedService {
                 if (Boolean.TRUE.equals(summary.getAtivo()) && Boolean.TRUE.equals(summary.getPublico())) {
                     totalCurtidas = likesService.contarCurtidas(summary);
                 }
-                String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+                String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : "/avatares/default.svg";
                 var tags = summary.getTagLinks()
                         .stream()
                         .map(link -> {
@@ -106,7 +106,7 @@ public class FeedService {
                 return new SummaryGetResponseDTO(summary.getId(),
                         summary.getStudent().getId(),
                         summary.getStudent().getNome(),
-                        summary.getStudent().getAvatar().getUrl(),
+                        summary.getStudent().getAvatar().getUrl() == null ? "/avatares/default.svg" : summary.getStudent().getAvatar().getUrl(),
                         summary.getSubject() != null ? summary.getSubject().getId() : null,
                         summary.getSubject() != null ? summary.getSubject().getName() : null,
                         summary.getTitulo(),

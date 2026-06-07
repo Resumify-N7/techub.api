@@ -58,7 +58,7 @@ public class FavoritesService {
     private SummaryGetResponseDTO toListResponse(Summary summary) {
         Integer totalReports = Math.toIntExact(reportRepository.countBySummaryAndReportadoTrue(summary));
         Long totalCurtidas = likesRepository.countBySummary(summary);
-        String studentUrl = summary.getStudent().getAvatar() != null ? summary.getStudent().getAvatar().getUrl() : null;
+        String studentUrl = summary.getStudent().getAvatar() == null ? "/avatares/default.svg": summary.getStudent().getAvatar().getUrl();
         var tags = summary.getTagLinks()
                 .stream()
                 .map(link -> {
@@ -77,7 +77,7 @@ public class FavoritesService {
                 summary.getId(),
                 summary.getStudent().getId(),
                 summary.getStudent().getNome(),
-                summary.getStudent().getAvatar().getUrl(),
+                studentUrl,
                 summary.getSubject() != null ? summary.getSubject().getId() : null,
                 summary.getSubject() != null ? summary.getSubject().getName() : null,
                 summary.getTitulo(),
