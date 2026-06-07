@@ -9,4 +9,6 @@ public interface CourseRepository extends SoftDeleteRepository<Course, Long> {
     boolean existsByNameIgnoreCase(String name);
     Optional<Course> findTopByOrderByIdAsc();
     List<Course> findByAtivoFalse();
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }

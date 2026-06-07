@@ -13,4 +13,6 @@ public interface SubjectRepository extends SoftDeleteRepository<Subject, Long> {
     List<Subject> findByCourseAndAtivoTrue(Course course);
     Page<Subject> findByCourseAndSemestre(Course course, Integer semestre, Pageable pageable);
     Page<Subject> findByCourseAndSemestreAndAtivoTrue(Course course, Integer semestre, Pageable pageable);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }

@@ -31,6 +31,8 @@ public class FeedService {
                            ReportRepository reportRepository) {
             this.summaryRepository = summaryRepository;
             this.followService = followService;
+            this.reportRepository = reportRepository;
+            this.likesService = likesService;
         }
 
         public FeedDTO getFeed(Long studentId, int page, int size) {

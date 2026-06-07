@@ -214,6 +214,14 @@ public class SummaryService {
 
         return toResponse(summary, true);
     }
+    
+    @Transactional(readOnly = true)
+    public SummaryGetResponseDTO getByIdAsAdmin(Long id) {
+        Summary summary = summaryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
+
+        return toResponse(summary, true);
+    }
 
     @Transactional(readOnly = true)
     public List<SummaryGetResponseDTO> getStudentSummary(Long id, int limit){
@@ -251,7 +259,7 @@ public class SummaryService {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        Subject subject = subjectRepository.findById(dto.materiaId())
+        Subject subject = subjectRepository.findById(dto.summaryId())
                         .orElseThrow(() -> new RuntimeException("Erro ao encontrar a materia"));
 
         existing.getTagLinks().clear();

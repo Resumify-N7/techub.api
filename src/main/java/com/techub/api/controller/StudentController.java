@@ -10,6 +10,7 @@ import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,6 +46,12 @@ public class StudentController {
     @GetMapping("/{id}")
     public StudentGetDTO busarPerfilId(@PathVariable Long id) {
         return studentService.buscar_perfilId(id);
+    }
+
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADM')")
+    public StudentGetDTO busarPerfilIdAsAdmin(@PathVariable Long id) {
+        return studentService.buscar_perfilIdAsAdmin(id);
     }
 
     @GetMapping("/me")

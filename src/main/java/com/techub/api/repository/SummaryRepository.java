@@ -20,7 +20,8 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
 
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findByStudentIdAndAtivoTrue(Long studentId, Pageable pageable);
-
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 
     @Query("""
         SELECT s FROM Summary s

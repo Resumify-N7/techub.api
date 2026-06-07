@@ -27,7 +27,7 @@ public class SubjectController {
     }
 
     @GetMapping("/ativos")
-    public ResponseEntity<List<SubjectListResponseDTO>> listarAtivos(@RequestParam(defaultValue = "20") int limit) {
+    public ResponseEntity<List<SubjectListResponseDTO>> listarAtivos(@RequestParam(defaultValue = "40") int limit) {
         return ResponseEntity.ok(subjectService.listar(limit));
     }
 

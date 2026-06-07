@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 public interface StudentRepository extends SoftDeleteRepository<Student, Long> {
     Page<Student> findByCourse(Course course, Pageable pageable);
     Page<Student> findByCourseAndSemestre(Course course, Integer semestre, Pageable pageable);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 
     @Query("""
         SELECT COUNT(f)
