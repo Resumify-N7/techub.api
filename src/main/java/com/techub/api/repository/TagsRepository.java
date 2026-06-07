@@ -9,4 +9,6 @@ public interface TagsRepository extends SoftDeleteRepository<Tags, Long> {
     boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
     Page<Tags> findByAtivoTrue(Pageable pageable);
     Page<Tags> findByAtivoFalse(Pageable pageable);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }

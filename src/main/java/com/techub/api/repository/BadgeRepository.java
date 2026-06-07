@@ -12,4 +12,6 @@ public interface BadgeRepository extends SoftDeleteRepository<Badge, Long> {
     Optional<Badge> findByNameIgnoreCaseAndAtivoTrue(String name);
     Page<Badge> findByAtivoTrue(Pageable pageable);
     Page<Badge> findByAtivoFalse(Pageable pageable);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }

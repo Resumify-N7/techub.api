@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BioRepository extends SoftDeleteRepository<Bio, Long> {
-
     List<Bio> findAllByOrderByIdAsc();
-
     Optional<Bio> findByDescription(String description);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }
