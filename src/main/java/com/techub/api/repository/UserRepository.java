@@ -13,4 +13,6 @@ public interface UserRepository extends SoftDeleteRepository<User, Long> {
     boolean existsByEmail(String email);  //se o email ja estiver cadastrado ele nao deixa finalizar o cadastr
     Optional<User> findByStudent_Id(Long studentId);
     boolean existsByEmailIgnoreCase(String email);
+    long countByAtivoTrue();
+    long countByAtivoFalse();
 }
