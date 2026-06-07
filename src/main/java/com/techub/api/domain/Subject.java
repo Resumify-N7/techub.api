@@ -31,4 +31,8 @@ public class Subject extends BaseEntity {
     @OneToMany(mappedBy = "subject")
     @JsonIgnore
     private List<Summary> summaries = new ArrayList<>();
+
+    @OneToMany(mappedBy = "subject")
+    @JsonIgnore
+    private List<Professor> professors = new ArrayList<>();
 }

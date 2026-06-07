@@ -35,6 +35,10 @@ public class User extends BaseEntity implements UserDetails {
     @JoinColumn(name = "student_id", unique = true)
     private Student student;
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "professor_id", unique = true)
+    private Professor professor;
+
     @OneToOne
     @JoinColumn(name = "adm_id")
     private ADM adm;

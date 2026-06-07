@@ -31,4 +31,8 @@ public class Avatar extends BaseEntity {
     @OneToMany(mappedBy = "avatar")
     @JsonIgnore
     private List<Student> students;
+
+    @OneToMany(mappedBy = "avatar")
+    @JsonIgnore
+    private List<Professor> professors;
 }

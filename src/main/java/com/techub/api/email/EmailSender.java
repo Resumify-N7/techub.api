@@ -7,4 +7,9 @@ public interface EmailSender {
             String subject,
             String html
     ) throws EmailSendException;
+
+    void validarDominioInstitucional(
+            String email
+    ) throws EmailSendException;
+
 }

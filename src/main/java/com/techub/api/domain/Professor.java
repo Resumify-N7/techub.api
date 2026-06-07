@@ -14,4 +14,17 @@ public class Professor extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String nome;
+
+    @Column(nullable = true)
+    private String bio;
+
+    @ManyToOne
+    @JoinColumn(name = "avatar_id")
+    private Avatar avatar;
+
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
 }
