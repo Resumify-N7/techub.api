@@ -28,11 +28,12 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
         WHERE s.student.id IN :followingUsers
         ORDER BY s.datahora DESC
     """)
-        @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findFeedSummaries(
             List<Long> followingUsers,
             Pageable pageable
     );
+
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
         SELECT DISTINCT s FROM Summary s

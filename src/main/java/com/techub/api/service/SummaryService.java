@@ -141,11 +141,16 @@ public class SummaryService {
                 .filter(Objects::nonNull)
                 .toList();
 
+        String studentUrl =
+                summary.getStudent().getAvatar() != null
+                        ? summary.getStudent().getAvatar().getUrl()
+                        : "/avatares/default.svg";
+
         return new SummaryGetResponseDTO(
                 summary.getId(),
                 summary.getStudent().getId(),
                 summary.getStudent().getNome(),
-                summary.getStudent().getAvatar().getUrl(),
+                studentUrl,
                 summary.getSubject() != null ? summary.getSubject().getId() : null,
                 summary.getSubject() != null ? summary.getSubject().getName() : null,
                 summary.getTitulo(),
