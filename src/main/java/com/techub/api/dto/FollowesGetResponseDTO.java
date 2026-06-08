@@ -4,7 +4,7 @@ import com.techub.api.domain.Course;
 
 public record FollowesGetResponseDTO(
         Long studentId,
-        Long followerd,
+        Long followerId,
         String name,
         Integer semestre,
         Course course,

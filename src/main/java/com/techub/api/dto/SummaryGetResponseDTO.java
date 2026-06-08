@@ -15,5 +15,8 @@ public record SummaryGetResponseDTO(
         Boolean publico,
         Boolean ativo,
         Long totalCurtidas,
-        List<TagResponseDTO> tags
-) {}
+        List<TagResponseDTO> tags,
+        BadgeDTO badge
+) {
+    public record BadgeDTO(Long id, String name, String description) {}
+}

@@ -13,8 +13,8 @@ public record StudentGetDTO(
         Avatar avatar,
         Course course,
         Integer pontuacao,
-        Boolean seguindoCurrentUser,
-        Boolean seguidoPeloCurrentUser,
+        @Nullable Boolean seguindoCurrentUser,
+        @Nullable Boolean seguidoPeloCurrentUser,
         @Nullable Long seguidores,
         @Nullable Long seguindo
 ) {}

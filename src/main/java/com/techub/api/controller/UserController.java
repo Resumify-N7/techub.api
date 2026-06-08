@@ -117,6 +117,12 @@ public class UserController {
         return ResponseEntity.ok("Sucesso ao ativar/desativar usuário");
     }
 
+    @PatchMapping("/atualizar_status/student/{studentId}")
+    public ResponseEntity<?> atualizarStatusPorStudentId(@PathVariable Long studentId) {
+        userService.atualizar_status_por_student_id(studentId);
+        return ResponseEntity.ok("Sucesso ao ativar/desativar usuário");
+    }
+
     @GetMapping("/role/{id}")
     public UserRoleResponse descobrirRole(@PathVariable Long id) {
         return userService.descobrirRole(id);

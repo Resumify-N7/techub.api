@@ -86,7 +86,13 @@ public class FavoritesService {
                 summary.getPublico(),
                 summary.getAtivo(),
                 totalCurtidas,
-                tags
+                tags,
+                summary.getBadge() != null
+                        ? new SummaryGetResponseDTO.BadgeDTO(
+                                summary.getBadge().getId(),
+                                summary.getBadge().getName(),
+                                summary.getBadge().getDescription())
+                        : null
         );
     }
 }

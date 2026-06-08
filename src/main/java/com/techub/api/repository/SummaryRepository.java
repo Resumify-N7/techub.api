@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, JpaSpecificationExecutor<Summary> {
+
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findActive(Pageable pageable);
 
@@ -20,6 +21,7 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
 
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findByStudentIdAndAtivoTrue(Long studentId, Pageable pageable);
+
     long countByAtivoTrue();
     long countByAtivoFalse();
 
@@ -30,19 +32,40 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
     """)
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     Page<Summary> findFeedSummaries(
-            List<Long> followingUsers,
+            @Param("followingUsers") List<Long> followingUsers,
             Pageable pageable
     );
+
+    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
+    @Query("""
+        SELECT s FROM Summary s
+        WHERE s.ativo = true AND s.publico = true
+        ORDER BY s.datahora DESC
+    """)
+    Page<Summary> findActivePublicOrderedByDate(Pageable pageable);
+
+    @Query("""
+    SELECT s
+    FROM Summary s
+    WHERE s.ativo = true AND s.publico = true
+    ORDER BY (
+        SELECT COUNT(l)
+        FROM Likes l
+        WHERE l.summary = s
+    ) DESC,
+    s.datahora DESC
+""")
+    Page<Summary> findRanking(Pageable pageable);
 
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
         SELECT DISTINCT s FROM Summary s
         LEFT JOIN s.tagLinks tl
         LEFT JOIN tl.tag t
-                WHERE (:universityId IS NULL OR s.subject.course.university.id = :universityId)
-                    AND (:courseId     IS NULL OR s.subject.course.id = :courseId)
-      AND (:tagId        IS NULL OR t.id = :tagId)
-      AND (:semestre     IS NULL OR s.subject.semestre = :semestre)
+        WHERE (:universityId IS NULL OR s.subject.course.university.id = :universityId)
+          AND (:courseId     IS NULL OR s.subject.course.id = :courseId)
+          AND (:tagId        IS NULL OR t.id = :tagId)
+          AND (:semestre     IS NULL OR s.subject.semestre = :semestre)
         ORDER BY s.datahora DESC
     """)
     Page<Summary> findByFilters(
@@ -52,5 +75,6 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
             @Param("semestre")     Integer semestre,
             Pageable pageable
     );
+
     List<Summary> findByPublicoTrue();
 }

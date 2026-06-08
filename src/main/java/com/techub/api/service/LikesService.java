@@ -39,26 +39,20 @@ public class LikesService {
     @Transactional
     public String curtir(Long summaryId, Long studentId) {
 
-        // Busca o resumo no banco, lança erro se não existir
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        // Busca o aluno no banco, lança erro se não existir
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Aluno não encontrado"));
 
-        // Verifica se o aluno já curtiu esse resumo
-        // se já curtiu, remove a curtida (toggle)
         var jaGostou = likesRepository.findByStudentAndSummary(student, summary);
 
         if (jaGostou.isPresent()) {
-            // já curtiu → descurte
             likesRepository.delete(jaGostou.get());
             removeFavorite(student, summary);
             return "Curtida removida";
         }
 
-        // ainda não curtiu → cria a curtida
         Likes like = new Likes();
         like.setStudent(student);
         like.setSummary(summary);
@@ -72,7 +66,6 @@ public class LikesService {
     }
 
     public long contarCurtidas(Long summaryId) {
-        // Busca o resumo e retorna o total de curtidas
         Summary summary = summaryRepository.findById(summaryId)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
         return likesRepository.countBySummary(summary);
@@ -83,7 +76,6 @@ public class LikesService {
     }
 
     public List<SummaryGetResponseDTO> getRanking(int limit) {
-        // Busca os resumos ordenados por curtidas
         List<Object[]> resultado = likesRepository.findRanking();
 
         int pageSize = Math.max(1, limit);
@@ -127,7 +119,13 @@ public class LikesService {
                     (Boolean) linha[7],
                     (Boolean) linha[8],
                     ((Number) linha[9]).longValue(),
-                    tags
+                    tags,
+                    summary.getBadge() != null
+                            ? new SummaryGetResponseDTO.BadgeDTO(
+                                    summary.getBadge().getId(),
+                                    summary.getBadge().getName(),
+                                    summary.getBadge().getDescription())
+                            : null
             );
         }
 

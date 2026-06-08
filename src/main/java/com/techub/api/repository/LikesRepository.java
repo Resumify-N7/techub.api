@@ -10,14 +10,10 @@ import java.util.Optional;
 
 public interface LikesRepository extends SoftDeleteRepository<Likes, Long> {
 
-    // Verifica se um aluno já curtiu um resumo específico
-    // evita curtidas duplicadas
     Optional<Likes> findByStudentAndSummary(Student student, Summary summary);
 
-    // Conta quantas curtidas um resumo tem
     long countBySummary(Summary summary);
 
-    // Retorna os resumos ordenados pelo número de curtidas (do mais curtido para o menos)
     @Query("""
         SELECT s.id, s.student.id, s.student.nome, a.url, s.titulo, s.conteudo, s.reports, s.publico, s.ativo, COUNT(l)
         FROM Likes l

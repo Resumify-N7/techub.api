@@ -1,12 +1,12 @@
 package com.techub.api.controller;
 
 import com.techub.api.domain.Student;
+import com.techub.api.dto.FeedDTO;
 import com.techub.api.dto.SummaryCreateRequestDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
 import com.techub.api.dto.SummaryUpdateRequestDTO;
 import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.SummaryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +17,17 @@ import java.util.List;
 @RequestMapping("/resumos")
 public class SummaryController {
 
-    @Autowired
-    private SummaryService service;
+    private final SummaryService service;
+    private final CurrentUserService currentUserService;
 
-    @Autowired
-    private CurrentUserService currentUserService;
+    public SummaryController(SummaryService service, CurrentUserService currentUserService) {
+        this.service = service;
+        this.currentUserService = currentUserService;
+    }
 
     @PostMapping
     public ResponseEntity<?> criar(@RequestBody SummaryCreateRequestDTO dto) {
         Student student = currentUserService.getCurrentStudent();
-
         try {
             return ResponseEntity.ok(service.saveSummary(dto, student.getId()));
         } catch (IllegalArgumentException e) {
@@ -40,14 +41,24 @@ public class SummaryController {
     }
 
     @GetMapping("/ativos")
-    public List<SummaryGetResponseDTO> listarResumosAtivados(@RequestParam(defaultValue = "20") int limit) {
-        return service.findByAtivoTrue(limit);
+    public ResponseEntity<FeedDTO> listarAtivos(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(service.findByAtivoTruePaged(page, size));
+    }
+
+    @GetMapping("/ranking")
+    public ResponseEntity<FeedDTO> ranking(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(service.getRankingPaged(page, size));
     }
 
     @GetMapping("/me")
     public List<SummaryGetResponseDTO> getStudentSummary(@RequestParam(defaultValue = "20") int limit) {
         Student student = currentUserService.getCurrentStudent();
-
         return service.getStudentSummary(student.getId(), limit);
     }
 
@@ -60,22 +71,23 @@ public class SummaryController {
     }
 
     @GetMapping("/subject/{subjectId}")
-    public List<SummaryGetResponseDTO> getBySubject(@PathVariable Long subjectId,
-                                                    @RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryGetResponseDTO> getBySubject(
+            @PathVariable Long subjectId,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
         return service.getBySubjectId(subjectId, limit);
     }
 
     @GetMapping("/desativados")
-    public List<SummaryGetResponseDTO> listarResumosDesativados(@RequestParam(defaultValue = "20") int limit) {
+    public List<SummaryGetResponseDTO> listarDesativados(@RequestParam(defaultValue = "20") int limit) {
         return service.findByAtivoFalse(limit);
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<SummaryGetResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
-    // Controller do ADM
+
     @GetMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADM')")
     public ResponseEntity<SummaryGetResponseDTO> getByIdAsAdmin(@PathVariable Long id) {
@@ -95,8 +107,7 @@ public class SummaryController {
 
     @PatchMapping("/reportar/{id}")
     public ResponseEntity<?> reportar(@PathVariable Long id) {
-        var student = currentUserService.getCurrentStudent();
-
+        Student student = currentUserService.getCurrentStudent();
         try {
             service.reportar(id, student.getId());
             return ResponseEntity.ok("Sucesso ao reportar o Resumo");
@@ -108,16 +119,37 @@ public class SummaryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletar(@PathVariable Long id) {
         service.delete(id);
-        return ResponseEntity.ok("Sucesso ao criar ao apagar Resumo");
+        return ResponseEntity.ok("Sucesso ao apagar Resumo");
     }
 
     @PatchMapping("/{summaryId}/visibilidade")
     public ResponseEntity<?> alternarVisibilidade(@PathVariable Long summaryId) {
-        var student = currentUserService.getCurrentStudent();
-
+        Student student = currentUserService.getCurrentStudent();
         try {
             service.alternarVisibilidade(summaryId, student.getId());
-            return ResponseEntity.ok("Sucesso ao alterar visibilidade. Resumo:" + summaryId + "Student: " + student.getId());
+            return ResponseEntity.ok("Sucesso ao alterar visibilidade. Resumo: " + summaryId);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{summaryId}/badge/professor")
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<?> atribuirBadgeProfessor(@PathVariable Long summaryId) {
+        try {
+            service.atribuirBadgeProfessor(summaryId);
+            return ResponseEntity.ok("Selo do professor atribuído com sucesso");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{summaryId}/badge/professor")
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<?> removerBadgeProfessor(@PathVariable Long summaryId) {
+        try {
+            service.removerBadgeProfessor(summaryId);
+            return ResponseEntity.ok("Selo do professor removido com sucesso");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
