@@ -58,6 +58,11 @@ public class CurrentUserService {
         return student;
     }
 
+    public Student getCurrentStudentOrNull() {
+        User currentUser = getCurrentUser();
+        return currentUser.getStudent();
+    }
+
     public String getCurrentEmail() {
         return getCurrentUser().getEmail();
     }
