@@ -3,6 +3,10 @@ package com.techub.api.repository;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
@@ -24,4 +28,6 @@ public interface LikesRepository extends SoftDeleteRepository<Likes, Long> {
         ORDER BY COUNT(l) DESC
     """)
     List<Object[]> findRanking();
+
+    Page<Likes> findByStudentIdOrderByIdDesc(Long studentId, Pageable pageable);
 }
