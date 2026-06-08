@@ -6,5 +6,6 @@ public record AuthResponse (
         Boolean status,
         Long id,
         Long studentId,
+        Long professorId,
         Role role
 ) {}

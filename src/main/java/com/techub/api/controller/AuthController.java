@@ -10,10 +10,8 @@ import com.techub.api.service.CurrentUserService;
 import com.techub.api.service.JwtService;
 import com.techub.api.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,7 +19,6 @@ public class AuthController {
 
     private final AuthenticationService authenticationService;
     private final JwtService jwtService;
-
     private final UserService userService;
     private final CurrentUserService currentUserService;
 
@@ -39,17 +36,16 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginDataDTO dto, HttpServletResponse response) {
-
         User user = authenticationService.authentication(dto);
         String token = jwtService.generateToken(user.getEmail());
 
         response.addHeader("Set-Cookie",
                 "accessToken=" + token +
-                "; HttpOnly" +
-                "; Path=/" +
-                "; Max-Age=3600" +
-                "; Secure" +
-                "; SameSite=None"
+                        "; HttpOnly" +
+                        "; Path=/" +
+                        "; Max-Age=3600" +
+                        "; Secure" +
+                        "; SameSite=None"
         );
 
         return ResponseEntity.ok(new UserLoginResponse("Sucesso ao criar o token", token));
@@ -57,7 +53,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-
         response.addHeader("Set-Cookie",
                 "accessToken=" + "" +
                         "; HttpOnly" +
@@ -71,10 +66,12 @@ public class AuthController {
     }
 
     @GetMapping
-    public ResponseEntity<?> auth(){
+    public ResponseEntity<?> auth() {
         User user = currentUserService.getCurrentUser();
 
-        Long studentId = user.getStudent() != null ? user.getStudent().getId() : null;
-        return ResponseEntity.ok(new AuthResponse(true, user.getId(), studentId, user.getRole()));
+        Long studentId   = user.getStudent()   != null ? user.getStudent().getId()   : null;
+        Long professorId = user.getProfessor()  != null ? user.getProfessor().getId() : null;
+
+        return ResponseEntity.ok(new AuthResponse(true, user.getId(), studentId, professorId, user.getRole()));
     }
 }
