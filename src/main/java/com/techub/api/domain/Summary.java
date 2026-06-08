@@ -44,12 +44,7 @@ public class Summary extends BaseEntity {
     @JoinColumn(name = "badge_id")
     private Badge badge;
 
-    @OneToMany(mappedBy = "summary")
+    @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<Favorites> favorites = new ArrayList<>();
-
-        // Many-to-many via explicit join entity `TagSummary` (table: tags_resumos)
-        @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
-        @JsonIgnore
-        private List<TagSummary> tagLinks = new ArrayList<>();
+    private List<TagSummary> tagLinks = new ArrayList<>();
 }
