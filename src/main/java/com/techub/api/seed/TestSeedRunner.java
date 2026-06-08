@@ -26,6 +26,8 @@ public class TestSeedRunner implements CommandLineRunner {
     private final FollowersRepository followersRepository;
     private final SummaryRepository summaryRepository;
     private final SubjectRepository subjectRepository;
+    private final LikesRepository likesRepository;
+    private final BadgeRepository badgeRepository;
 
     public TestSeedRunner(
             PasswordEncoder passwordEncoder,
@@ -36,7 +38,9 @@ public class TestSeedRunner implements CommandLineRunner {
             AvatarRepository avatarRepository,
             FollowersRepository followersRepository,
             SummaryRepository summaryRepository,
-            SubjectRepository subjectRepository
+            SubjectRepository subjectRepository,
+            LikesRepository likesRepository,
+            BadgeRepository badgeRepository
     ) {
         this.passwordEncoder = passwordEncoder;
         this.followService = followService;
@@ -47,6 +51,8 @@ public class TestSeedRunner implements CommandLineRunner {
         this.followersRepository = followersRepository;
         this.summaryRepository = summaryRepository;
         this.subjectRepository = subjectRepository;
+        this.likesRepository = likesRepository;
+        this.badgeRepository = badgeRepository;
     }
 
     @Override
@@ -67,25 +73,41 @@ public class TestSeedRunner implements CommandLineRunner {
         Avatar defaultAvatar = avatarRepository.findByUrl("/avatares/default.svg").orElse(null);
 
         List<Student> students = new ArrayList<>();
+        students.add(maybeCreateStudent("Lucas Mendes",      "lucas.mendes@fatec.sp.gov.br",      "senha123", 3, dsm, subjects, defaultAvatar, "/avatares/male-1.svg"));
+        students.add(maybeCreateStudent("Ana Beatriz Costa", "ana.costa@fatec.sp.gov.br",         "senha123", 3, dsm, subjects, defaultAvatar, "/avatares/female-1.svg"));
+        students.add(maybeCreateStudent("Pedro Alves",       "pedro.alves@fatec.sp.gov.br",       "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/male-2.svg"));
+        students.add(maybeCreateStudent("Mariana Oliveira",  "mariana.oliveira@fatec.sp.gov.br",  "senha123", 4, dsm, subjects, defaultAvatar, "/avatares/female-2.svg"));
+        students.add(maybeCreateStudent("Rafael Souza",      "rafael.souza@fatec.sp.gov.br",      "senha123", 1, dsm, subjects, defaultAvatar, "/avatares/male-3.svg"));
+        students.add(maybeCreateStudent("Camila Ferreira",   "camila.ferreira@fatec.sp.gov.br",   "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/female-3.svg"));
+        students.add(maybeCreateStudent("Bruno Carvalho",    "bruno.carvalho@fatec.sp.gov.br",    "senha123", 5, dsm, subjects, defaultAvatar, "/avatares/male-4.svg"));
+        students.add(maybeCreateStudent("Julia Martins",     "julia.martins@fatec.sp.gov.br",     "senha123", 4, dsm, subjects, defaultAvatar, "/avatares/female-4.svg"));
+        students.add(maybeCreateStudent("Diego Lima",        "diego.lima@fatec.sp.gov.br",        "senha123", 6, dsm, subjects, defaultAvatar, "/avatares/male-5.svg"));
+        students.add(maybeCreateStudent("Fernanda Rocha",    "fernanda.rocha@fatec.sp.gov.br",    "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/female-5.svg"));
 
-        students.add(maybeCreateStudent("Lucas Mendes",      "lucas.mendes@fatec.sp.gov.br",     "senha123", 3, dsm, subjects, defaultAvatar, "/avatares/male-1.svg"));
-        students.add(maybeCreateStudent("Ana Beatriz Costa", "ana.costa@fatec.sp.gov.br",        "senha123", 3, dsm, subjects, defaultAvatar, "/avatares/female-1.svg"));
-        students.add(maybeCreateStudent("Pedro Alves",       "pedro.alves@fatec.sp.gov.br",      "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/male-2.svg"));
-        students.add(maybeCreateStudent("Mariana Oliveira",  "mariana.oliveira@fatec.sp.gov.br", "senha123", 4, dsm, subjects, defaultAvatar, "/avatares/female-2.svg"));
-        students.add(maybeCreateStudent("Rafael Souza",      "rafael.souza@fatec.sp.gov.br",     "senha123", 1, dsm, subjects, defaultAvatar, "/avatares/male-3.svg"));
-        students.add(maybeCreateStudent("Camila Ferreira",   "camila.ferreira@fatec.sp.gov.br",  "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/female-3.svg"));
-        students.add(maybeCreateStudent("Bruno Carvalho",    "bruno.carvalho@fatec.sp.gov.br",   "senha123", 5, dsm, subjects, defaultAvatar, "/avatares/male-4.svg"));
-        students.add(maybeCreateStudent("Julia Martins",     "julia.martins@fatec.sp.gov.br",    "senha123", 4, dsm, subjects, defaultAvatar, "/avatares/female-4.svg"));
-        students.add(maybeCreateStudent("Diego Lima",        "diego.lima@fatec.sp.gov.br",       "senha123", 6, dsm, subjects, defaultAvatar, "/avatares/male-5.svg"));
-        students.add(maybeCreateStudent("Fernanda Rocha",    "fernanda.rocha@fatec.sp.gov.br",   "senha123", 2, dsm, subjects, defaultAvatar, "/avatares/female-5.svg"));
+        List<Student> novosAlunos = students.stream().filter(s -> s != null).toList();
 
-        List<Student> novos = students.stream().filter(s -> s != null).toList();
+        List<Professor> professors = new ArrayList<>();
+        professors.add(maybeCreateProfessor("Prof. Carlos Eduardo",  "carlos.eduardo@fatec.sp.gov.br",  "prof123", subjects, defaultAvatar, "/avatares/male-1.svg",   0));
+        professors.add(maybeCreateProfessor("Profa. Renata Silveira", "renata.silveira@fatec.sp.gov.br", "prof123", subjects, defaultAvatar, "/avatares/female-1.svg",  1));
+        professors.add(maybeCreateProfessor("Prof. Marcelo Andrade",  "marcelo.andrade@fatec.sp.gov.br", "prof123", subjects, defaultAvatar, "/avatares/male-2.svg",   2));
 
-        setupFollows(novos);
+        List<Professor> novosProfessores = professors.stream().filter(p -> p != null).toList();
 
-        System.out.println("[TestSeedRunner] Seed concluído. " + novos.size() + " aluno(s) criado(s).");
+        setupFollows(novosAlunos);
+
+        if (!novosAlunos.isEmpty()) {
+            setupLikes(novosAlunos);
+        }
+
+
+        if (!novosProfessores.isEmpty()) {
+            setupBadges();
+        }
+
+        System.out.println("[TestSeedRunner] Seed concluído. "
+                + novosAlunos.size() + " aluno(s) e "
+                + novosProfessores.size() + " professor(es) criado(s).");
     }
-
 
     private Student maybeCreateStudent(
             String nome,
@@ -128,6 +150,45 @@ public class TestSeedRunner implements CommandLineRunner {
         return savedStudent;
     }
 
+    private Professor maybeCreateProfessor(
+            String nome,
+            String email,
+            String senha,
+            List<Subject> allSubjects,
+            Avatar defaultAvatar,
+            String preferredAvatarUrl,
+            int subjectIndex
+    ) {
+        if (userRepository.existsByEmail(email)) {
+            System.out.println("[TestSeedRunner] Professor já existe, ignorando: " + email);
+            return null;
+        }
+
+        Avatar avatar = avatarRepository.findByUrl(preferredAvatarUrl)
+                .or(() -> avatarRepository.findByUrl("/avatares/default.svg"))
+                .orElse(defaultAvatar);
+
+        Subject subject = allSubjects.isEmpty()
+                ? null
+                : allSubjects.get(subjectIndex % allSubjects.size());
+
+        Professor professor = new Professor();
+        professor.setNome(nome);
+        professor.setBio("Professor de " + (subject != null ? subject.getName() : "DSM") + " na Fatec.");
+        professor.setAvatar(avatar);
+        professor.setSubject(subject);
+        professor.setAtivo(true);
+
+        User user = new User();
+        user.setEmail(email);
+        user.setSenha(passwordEncoder.encode(senha));
+        user.setRole(Role.PROFESSOR);
+        user.setAtivo(true);
+        user.setProfessor(professor);
+        userRepository.save(user);
+
+        return professor;
+    }
 
     private void criarResumos(Student student, Integer semestre, List<Subject> allSubjects) {
         List<Subject> disponiveis = allSubjects.stream()
@@ -139,7 +200,7 @@ public class TestSeedRunner implements CommandLineRunner {
         }
         if (disponiveis.isEmpty()) return;
 
-        int total = RESUMOS.length;
+        int total  = RESUMOS.length;
         int offset = Math.abs(student.getNome().hashCode()) % total;
 
         for (int i = 0; i < RESUMOS_POR_ALUNO; i++) {
@@ -159,13 +220,129 @@ public class TestSeedRunner implements CommandLineRunner {
             summaryRepository.save(summary);
         }
     }
+
+    private void setupLikes(List<Student> students) {
+        List<Summary> todosSumarios = summaryRepository.findByPublicoTrue();
+        if (todosSumarios.isEmpty()) return;
+
+        int likesAdicionados = 0;
+
+        for (Student liker : students) {
+            int curtidas = 0;
+            for (Summary summary : todosSumarios) {
+                if (curtidas >= 4) break;
+                if (summary.getStudent() == null) continue;
+                if (summary.getStudent().getId().equals(liker.getId())) continue;
+
+                boolean jaExiste = likesRepository
+                        .findByStudentAndSummary(liker, summary)
+                        .isPresent();
+
+                if (!jaExiste) {
+                    Likes like = new Likes();
+                    like.setStudent(liker);
+                    like.setSummary(summary);
+                    like.setAtivo(true);
+                    likesRepository.save(like);
+                    curtidas++;
+                    likesAdicionados++;
+                }
+            }
+        }
+
+        System.out.println("[TestSeedRunner] " + likesAdicionados + " like(s) criado(s).");
+    }
+
+    private void boostSummariesTo50Likes(List<Student> baseStudents) {
+        List<Summary> summaries = summaryRepository.findByPublicoTrue();
+        if (summaries.isEmpty()) return;
+
+        List<Student> likersPool = new ArrayList<>(baseStudents);
+
+        // garante pelo menos 60 "likers" virtuais
+        for (int i = 0; i < 60; i++) {
+            Student bot = new Student();
+            bot.setId(-1000L - i);
+            bot.setNome("Bot User " + i);
+            likersPool.add(bot);
+        }
+
+        for (Summary summary : summaries) {
+
+            int currentLikes = (int) likesRepository.countBySummary(summary);
+
+            if (currentLikes >= 50) continue;
+
+            int needed = 50 - currentLikes;
+
+            int added = 0;
+
+            for (Student liker : likersPool) {
+
+                if (added >= needed) break;
+
+                if (summary.getStudent() != null &&
+                        summary.getStudent().getId().equals(liker.getId())) {
+                    continue;
+                }
+
+                boolean exists = likesRepository
+                        .findByStudentAndSummary(liker, summary)
+                        .isPresent();
+
+                if (exists) continue;
+
+                Likes like = new Likes();
+                like.setStudent(liker);
+                like.setSummary(summary);
+                like.setAtivo(true);
+
+                likesRepository.save(like);
+                added++;
+            }
+
+            System.out.println("[Seed] Summary " + summary.getId() +
+                    " agora tem +" + added + " likes (target 50)");
+        }
+    }
+
+    private void setupBadges() {
+        Badge badge = badgeRepository.findByNameIgnoreCaseAndAtivoTrue("Destaque do Professor")
+                .orElseGet(() -> {
+                    Badge novo = new Badge();
+                    novo.setName("Destaque do Professor");
+                    novo.setDescription("Concedido por um professor a um resumo de destaque");
+                    novo.setAtivo(true);
+                    return badgeRepository.save(novo);
+                });
+
+        List<Object[]> ranking = likesRepository.findRanking();
+
+        int badgesAtribuidos = 0;
+        for (Object[] row : ranking) {
+            if (badgesAtribuidos >= 3) break;
+
+            Long summaryId = ((Number) row[0]).longValue();
+            summaryRepository.findById(summaryId).ifPresent(summary -> {
+                if (summary.getBadge() == null) {
+                    summary.setBadge(badge);
+                    summaryRepository.save(summary);
+                }
+            });
+            badgesAtribuidos++;
+        }
+
+        System.out.println("[TestSeedRunner] " + badgesAtribuidos + " badge(s) de destaque atribuído(s).");
+    }
+
     private void setupFollows(List<Student> students) {
         for (Student follower : students) {
             for (Student following : students) {
                 if (!follower.getId().equals(following.getId())) {
                     try {
                         followService.follow(follower.getId(), following.getId());
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
@@ -208,7 +385,7 @@ public class TestSeedRunner implements CommandLineRunner {
             },
             {
                     "Hooks no React: useState e useEffect",
-                    "useState gerencia estado local: `const [valor, setValor] = useState(inicial)`. A cada chamada de setter, o componente re-renderiza. useEffect executa efeitos colaterais: chamadas API, subscriptions, manipulação do DOM. O array de dependências controla quando roda — `[]` roda só na montagem, `[x]` roda quando x muda, sem array roda em todo render. Retornar uma função no useEffect é o eanup (cancela subscriptions, timers). No React 18 com StrictMode, useEffect roda duas vezes em dev para detectar efeitos não-idempotentes."
+                    "useState gerencia estado local: `const [valor, setValor] = useState(inicial)`. A cada chamada de setter, o componente re-renderiza. useEffect executa efeitos colaterais: chamadas API, subscriptions, manipulação do DOM. O array de dependências controla quando roda — `[]` roda só na montagem, `[x]` roda quando x muda, sem array roda em todo render. Retornar uma função no useEffect é o cleanup (cancela subscriptions, timers). No React 18 com StrictMode, useEffect roda duas vezes em dev para detectar efeitos não-idempotentes."
             },
             {
                     "TypeScript: tipos utilitários essenciais",

@@ -21,7 +21,6 @@ public class ProfessorController {
         this.userRepository = userRepository;
     }
 
-    // Perfil do professor autenticado
     @GetMapping("/me")
     public ProfessorGetDTO getMe() {
         User user = currentUserService.getCurrentUser();
@@ -34,7 +33,6 @@ public class ProfessorController {
         return toDTO(professor, user.getEmail());
     }
 
-    // Perfil público de qualquer professor pelo ID do Professor
     @GetMapping("/{id}")
     public ProfessorGetDTO getById(@PathVariable Long id) {
         User user = userRepository.findByProfessorId(id)

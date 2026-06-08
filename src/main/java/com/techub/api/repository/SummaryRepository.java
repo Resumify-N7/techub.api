@@ -25,7 +25,6 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
     long countByAtivoTrue();
     long countByAtivoFalse();
 
-    // Feed de seguidos — ordenado por data decrescente
     @Query("""
         SELECT s FROM Summary s
         WHERE s.student.id IN :followingUsers
@@ -37,7 +36,6 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
             Pageable pageable
     );
 
-    // Ativos e públicos — ordenados do mais recente ao mais antigo (aba "Explorar")
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
         SELECT s FROM Summary s
@@ -46,18 +44,19 @@ public interface SummaryRepository extends SoftDeleteRepository<Summary, Long>, 
     """)
     Page<Summary> findActivePublicOrderedByDate(Pageable pageable);
 
-    // Ranking — ativos e públicos, ordenados por curtidas decrescente
-    @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
-        SELECT s FROM Summary s
-        LEFT JOIN Likes l ON l.summary = s
-        WHERE s.ativo = true AND s.publico = true
-        GROUP BY s
-        ORDER BY COUNT(l) DESC, s.datahora DESC
-    """)
+    SELECT s
+    FROM Summary s
+    WHERE s.ativo = true AND s.publico = true
+    ORDER BY (
+        SELECT COUNT(l)
+        FROM Likes l
+        WHERE l.summary = s
+    ) DESC,
+    s.datahora DESC
+""")
     Page<Summary> findRanking(Pageable pageable);
 
-    // Filtros dinâmicos (Specification)
     @EntityGraph(attributePaths = {"student", "student.avatar", "subject", "tagLinks.tag"})
     @Query("""
         SELECT DISTINCT s FROM Summary s

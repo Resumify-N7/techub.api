@@ -132,4 +132,26 @@ public class SummaryController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{summaryId}/badge/professor")
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<?> atribuirBadgeProfessor(@PathVariable Long summaryId) {
+        try {
+            service.atribuirBadgeProfessor(summaryId);
+            return ResponseEntity.ok("Selo do professor atribuído com sucesso");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{summaryId}/badge/professor")
+    @PreAuthorize("hasRole('PROFESSOR')")
+    public ResponseEntity<?> removerBadgeProfessor(@PathVariable Long summaryId) {
+        try {
+            service.removerBadgeProfessor(summaryId);
+            return ResponseEntity.ok("Selo do professor removido com sucesso");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

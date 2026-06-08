@@ -288,6 +288,14 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public void atualizar_status_por_student_id(Long studentId) {
+        User user = userRepository.findByStudent_Id(studentId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado para o studentId: " + studentId));
+        user.setAtivo(!user.getAtivo());
+        userRepository.save(user);
+    }
+
     public UserRoleResponse descobrirRole(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Erro ao buscar usuario!"));

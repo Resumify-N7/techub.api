@@ -26,6 +26,7 @@ public class SummaryService {
     private final SubjectRepository subjectRepository;
     private final StudentService studentService;
     private final CurrentUserService currentUserService;
+    private final BadgeRepository badgeRepository;
 
     public SummaryService(
             SummaryRepository summaryRepository,
@@ -35,7 +36,8 @@ public class SummaryService {
             StudentRepository studentRepository,
             SubjectRepository subjectRepository,
             StudentService studentService,
-            CurrentUserService currentUserService
+            CurrentUserService currentUserService,
+            BadgeRepository badgeRepository
     ) {
         this.summaryRepository = summaryRepository;
         this.likesService = likesService;
@@ -45,9 +47,8 @@ public class SummaryService {
         this.subjectRepository = subjectRepository;
         this.studentService = studentService;
         this.currentUserService = currentUserService;
+        this.badgeRepository = badgeRepository;
     }
-
-    // ── Criação ───────────────────────────────────────────────────────────────
 
     @Transactional
     public SummaryCreateResponseDTO saveSummary(SummaryCreateRequestDTO dto, Long id) {
@@ -103,16 +104,12 @@ public class SummaryService {
                 summary.getTitulo(), summary.getConteudo()
         );
     }
-
-    // ── Leitura ───────────────────────────────────────────────────────────────
-
     @Transactional(readOnly = true)
     public List<SummaryGetResponseDTO> getAll(int limit) {
         return summaryRepository.findActive(PageRequest.of(0, Math.max(1, limit)))
                 .getContent().stream().map(s -> toResponse(s, true)).toList();
     }
 
-    // Ativos paginados — ordenados do mais recente ao mais antigo
     @Transactional(readOnly = true)
     public FeedDTO findByAtivoTruePaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, Math.max(1, size));
@@ -126,7 +123,6 @@ public class SummaryService {
         );
     }
 
-    // Ranking paginado — ordenado por curtidas
     @Transactional(readOnly = true)
     public FeedDTO getRankingPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page, Math.max(1, size));
@@ -151,7 +147,6 @@ public class SummaryService {
         Summary summary = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        // Permite que ADM e PROFESSOR vejam sem ter perfil de estudante
         User currentUser = currentUserService.getCurrentUser();
         Student student = currentUser.getStudent();
 
@@ -206,8 +201,6 @@ public class SummaryService {
                 .findBySubjectIdAndAtivoTrue(subjectId, PageRequest.of(0, Math.max(1, limit)))
                 .getContent().stream().map(s -> toResponse(s, true)).toList();
     }
-
-    // ── Mutações ──────────────────────────────────────────────────────────────
 
     public SummaryGetResponseDTO update(Long id, SummaryUpdateRequestDTO dto) {
         Summary existing = summaryRepository.findById(id)
@@ -284,7 +277,31 @@ public class SummaryService {
         summaryRepository.save(summary);
     }
 
-    // ── Mapeamento interno ────────────────────────────────────────────────────
+    @Transactional
+    public void atribuirBadgeProfessor(Long summaryId) {
+        Summary summary = summaryRepository.findById(summaryId)
+                .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
+
+        Badge badge = badgeRepository.findByNameIgnoreCaseAndAtivoTrue("Destaque do Professor")
+                .orElseGet(() -> {
+                    Badge novo = new Badge();
+                    novo.setName("Destaque do Professor");
+                    novo.setDescription("Concedido por um professor a um resumo de destaque");
+                    novo.setAtivo(true);
+                    return badgeRepository.save(novo);
+                });
+
+        summary.setBadge(badge);
+        summaryRepository.save(summary);
+    }
+
+    @Transactional
+    public void removerBadgeProfessor(Long summaryId) {
+        Summary summary = summaryRepository.findById(summaryId)
+                .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
+        summary.setBadge(null);
+        summaryRepository.save(summary);
+    }
 
     private SummaryGetResponseDTO toResponse(Summary summary, boolean includeLikes) {
         Long totalCurtidas = null;
@@ -320,7 +337,13 @@ public class SummaryService {
                 summary.getPublico(),
                 summary.getAtivo(),
                 totalCurtidas,
-                tags
+                tags,
+                summary.getBadge() != null
+                        ? new SummaryGetResponseDTO.BadgeDTO(
+                        summary.getBadge().getId(),
+                        summary.getBadge().getName(),
+                        summary.getBadge().getDescription())
+                        : null
         );
     }
 }

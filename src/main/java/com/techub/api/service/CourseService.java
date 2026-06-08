@@ -1,9 +1,6 @@
 package com.techub.api.service;
 
-import com.techub.api.domain.Course;
-import com.techub.api.domain.Student;
-import com.techub.api.domain.Subject;
-import com.techub.api.domain.Summary;
+import com.techub.api.domain.*;
 import com.techub.api.dto.StudentGetSimpleResponseDTO;
 import com.techub.api.repository.CourseRepository;
 import com.techub.api.repository.StudentRepository;
@@ -51,9 +48,18 @@ public class CourseService {
     }
 
     public List<Subject> listarMinhasMaterias(int limit){
-        Student student = currentUserService.getCurrentStudent();
+        User currentUser = currentUserService.getCurrentUser();
 
-        return listarSubjectsPorCursoESemestre(student.getCourse().getId(), student.getSemestre(), limit);
+        if (currentUser.getRole() == Role.ALUNO) {
+            Student student = currentUser.getStudent();
+            return listarSubjectsPorCursoESemestre(
+                    student.getCourse().getId(),
+                    student.getSemestre(),
+                    limit
+            );
+        }
+
+        return listarSubjectsPorCurso(courseRepository.findTopByOrderByIdAsc().get().getId());
     }
 
     public List<Subject> listarSubjectsPorCurso(Long cursoId) {

@@ -76,18 +76,24 @@ public class StudentService {
 
     public StudentGetDTO buscar_perfilId(Long id) {
         Student student = buscar_por_id(id);
-        Student currentStudent = currentUserService.getCurrentStudent();
+        User currentUser = currentUserService.getCurrentUser();
 
-        boolean currentUserFollowsTarget = followersRepository
-            .findByFollowerIdAndFollowingId(currentStudent.getId(), student.getId())
-            .isPresent();
+        Boolean seguindoCurrentUser = null;
+        Boolean seguidoPeloCurrentUser = null;
 
-        boolean targetFollowsCurrentUser = followersRepository
-            .findByFollowerIdAndFollowingId(student.getId(), currentStudent.getId())
-            .isPresent();
+        if (currentUser.getRole() == Role.ALUNO) {
+            seguidoPeloCurrentUser = followersRepository
+                    .findByFollowerIdAndFollowingId(
+                            currentUser.getStudent().getId(),
+                            student.getId())
+                    .isPresent();
 
-        student.setSeguidoPeloCurrentUser(currentUserFollowsTarget);
-        student.setSeguindoCurrentUser(targetFollowsCurrentUser);
+            seguindoCurrentUser = followersRepository
+                    .findByFollowerIdAndFollowingId(
+                            student.getId(),
+                            currentUser.getStudent().getId())
+                    .isPresent();
+        }
 
         return new StudentGetDTO(
                 student.getAtivo(),
@@ -98,8 +104,8 @@ public class StudentService {
                 student.getAvatar(),
                 student.getCourse(),
                 student.getPontuacao(),
-                student.getSeguindoCurrentUser(),
-                student.getSeguidoPeloCurrentUser(),
+                seguindoCurrentUser,
+                seguidoPeloCurrentUser,
                 studentRepository.countFollowers(student.getId()),
                 studentRepository.countFollowing(student.getId())
         );
