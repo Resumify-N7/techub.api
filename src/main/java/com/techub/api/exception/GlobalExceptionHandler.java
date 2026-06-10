@@ -79,6 +79,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(UserDesactivatedException.class)
+    public ResponseEntity<ErrorResponse> handdleUserDesactivated(UserDesactivatedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                new ErrorResponse(401, "UNAUTHORIZED", ex.getMessage())
+        );
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
