@@ -4,7 +4,7 @@ import com.techub.api.domain.*;
 import com.techub.api.dto.*;
 import com.techub.api.email.EmailSender;
 import com.techub.api.email.EmailTemplate;
-import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.exception.EmailAlreadyExistsException;
 import com.techub.api.repository.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -60,7 +60,7 @@ public class UserService {
         user.setAtivo(true);
 
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new EmailAlredyExistsExeception();
+            throw new EmailAlreadyExistsException();
         }
 
         if (!passwordAlreadyHashed) {
@@ -75,7 +75,7 @@ public class UserService {
         emailSender.validarDominioInstitucional(dto.email());
 
         if (userRepository.existsByEmail(dto.email())) {
-            throw new EmailAlredyExistsExeception();
+            throw new EmailAlreadyExistsException();
         }
 
         String senhaHash = passwordEncoder.encode(dto.senha());
@@ -96,7 +96,7 @@ public class UserService {
     @Transactional
     public User cadastrarAlunoViaConfirmacaoEmail(UserCreateStudentRequestDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new EmailAlredyExistsExeception();
+            throw new EmailAlreadyExistsException();
         }
 
         User user = new User();
@@ -162,7 +162,7 @@ public class UserService {
         emailSender.validarDominioInstitucional(dto.email());
 
         if (userRepository.existsByEmail(dto.email())) {
-            throw new EmailAlredyExistsExeception();
+            throw new EmailAlreadyExistsException();
         }
 
         if (dto.subjectId() == null) {
@@ -188,7 +188,7 @@ public class UserService {
     @Transactional
     public User cadastrarProfessorViaConfirmacaoEmail(PendingProfessorRegistrationDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new EmailAlredyExistsExeception();
+            throw new EmailAlreadyExistsException();
         }
 
         Subject subject = subjectRepository.findById(dto.subjectId())

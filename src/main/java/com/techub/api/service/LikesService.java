@@ -4,6 +4,7 @@ import com.techub.api.domain.Badge;
 import com.techub.api.domain.Likes;
 import com.techub.api.domain.Student;
 import com.techub.api.domain.Summary;
+import com.techub.api.dto.FeedDTO;
 import com.techub.api.dto.SummaryGetResponseDTO;
 import com.techub.api.dto.TagResponseDTO;
 import com.techub.api.repository.BadgeRepository;
@@ -65,24 +66,19 @@ public class LikesService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SummaryGetResponseDTO> getMyCurtidos(Long studentId, int page, int size) {
-        return likesRepository
-                .findByStudentIdOrderByIdDesc(studentId, PageRequest.of(page, size))
-                .map(like -> toResponse(like.getSummary()));
+    public FeedDTO getMyCurtidos(Long studentId, int page, int size) {
+        Page<Likes> result = likesRepository
+                .findByStudentIdOrderByIdDesc(studentId, PageRequest.of(page, size));
+
+        List<SummaryGetResponseDTO> data = result.getContent().stream()
+                .map(like -> toResponse(like.getSummary()))
+                .toList();
+
+        return new FeedDTO(data, result.getNumber(), result.getSize(), result.getTotalElements());
     }
 
     public long contarCurtidas(Summary summary) {
         return likesRepository.countBySummary(summary);
-    }
-
-    public List<SummaryGetResponseDTO> getRanking(int limit) {
-        List<Object[]> resultado = likesRepository.findRanking();
-
-        int pageSize = Math.max(1, limit);
-        return resultado.stream()
-        .limit(pageSize)
-        .map(this::toRankingResponse)
-        .toList();
     }
 
     private SummaryGetResponseDTO toRankingResponse(Object[] linha) {

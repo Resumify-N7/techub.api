@@ -214,7 +214,6 @@ public class TestSeedRunner implements CommandLineRunner {
             summary.setSubject(materia);
             summary.setDatahora(LocalDateTime.now().minusDays(i * 3L));
             summary.setPublico(true);
-            summary.setReports(0);
             summary.setAtivo(true);
 
             summaryRepository.save(summary);
@@ -259,7 +258,6 @@ public class TestSeedRunner implements CommandLineRunner {
 
         List<Student> likersPool = new ArrayList<>(baseStudents);
 
-        // garante pelo menos 60 "likers" virtuais
         for (int i = 0; i < 60; i++) {
             Student bot = new Student();
             bot.setId(-1000L - i);

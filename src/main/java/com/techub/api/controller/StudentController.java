@@ -91,8 +91,6 @@ public class StudentController {
         return studentService.obter_dados_login(id);
     }
 
-
-
     // aqui mexe aqui tbmm
     @PutMapping("/{id}/trocar-curso")
     public ResponseEntity<?> trocarCurso(

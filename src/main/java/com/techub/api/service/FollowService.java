@@ -1,11 +1,13 @@
 package com.techub.api.service;
 
 import com.techub.api.domain.Followers;
-import com.techub.api.dto.FollowesGetResponseDTO;
+import com.techub.api.dto.FollowGetResponseDTO;
+import com.techub.api.dto.FollowPageDTO;
 import com.techub.api.domain.Student;
 import com.techub.api.repository.FollowersRepository;
 import com.techub.api.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -21,25 +23,21 @@ public class FollowService {
     private StudentRepository studentRepository;
 
     public List<Long> getFollowingUsers(Long studentId) {
-
-        List<Followers> follows =
-                followersRepository.findByFollowerId(studentId);
-
-        return follows.stream()
+        return followersRepository.findByFollowerId(studentId)
+                .stream()
                 .map(follow -> follow.getFollowing().getId())
                 .toList();
-        }
+    }
 
-        public List<FollowesGetResponseDTO> getFollowingDetails(Long studentId, int limit) {
-                int pageSize = Math.max(1, limit);
+    public FollowPageDTO getFollowingDetails(Long studentId, int page, int size) {
+        int safeSize = Math.max(1, size);
+        Page<Followers> followPage =
+                followersRepository.findByFollowerId(studentId, PageRequest.of(page, safeSize));
 
-                List<Followers> follows =
-                                followersRepository.findByFollowerId(studentId, PageRequest.of(0, pageSize)).getContent();
-
-        return follows.stream()
+        List<FollowGetResponseDTO> data = followPage.getContent().stream()
                 .map(follow -> {
                     var s = follow.getFollowing();
-                    return new FollowesGetResponseDTO(
+                    return new FollowGetResponseDTO(
                             s.getId(),
                             follow.getFollower().getId(),
                             s.getNome(),
@@ -50,18 +48,19 @@ public class FollowService {
                     );
                 })
                 .toList();
-        }
 
-        public List<FollowesGetResponseDTO> getFollowersDetails(Long studentId, int limit) {
-                int pageSize = Math.max(1, limit);
+        return new FollowPageDTO(data, page, safeSize, followPage.getTotalElements());
+    }
 
-                List<Followers> follows =
-                                followersRepository.findByFollowingId(studentId, PageRequest.of(0, pageSize)).getContent();
+    public FollowPageDTO getFollowersDetails(Long studentId, int page, int size) {
+        int safeSize = Math.max(1, size);
+        Page<Followers> followPage =
+                followersRepository.findByFollowingId(studentId, PageRequest.of(page, safeSize));
 
-        return follows.stream()
+        List<FollowGetResponseDTO> data = followPage.getContent().stream()
                 .map(follow -> {
                     var s = follow.getFollower();
-                    return new FollowesGetResponseDTO(
+                    return new FollowGetResponseDTO(
                             s.getId(),
                             follow.getFollower().getId(),
                             s.getNome(),
@@ -72,6 +71,8 @@ public class FollowService {
                     );
                 })
                 .toList();
+
+        return new FollowPageDTO(data, page, safeSize, followPage.getTotalElements());
     }
 
     public void follow(Long followerId, Long followingId) {
@@ -95,9 +96,7 @@ public class FollowService {
     }
 
     public void unfollow(Long followerId, Long followingId) {
-        var existing = followersRepository.findByFollowerIdAndFollowingId(followerId, followingId);
-        if (existing.isPresent()) {
-            followersRepository.delete(existing.get());
-        }
+        followersRepository.findByFollowerIdAndFollowingId(followerId, followingId)
+                .ifPresent(followersRepository::delete);
     }
 }

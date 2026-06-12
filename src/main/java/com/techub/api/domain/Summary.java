@@ -27,9 +27,6 @@ public class Summary extends BaseEntity {
     private LocalDateTime datahora;
 
     @Column
-    private Integer reports = 0;
-
-    @Column
     private Boolean publico = true;
 
     @ManyToOne
@@ -47,4 +44,7 @@ public class Summary extends BaseEntity {
     @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<TagSummary> tagLinks = new ArrayList<>();
+
+    @OneToMany
+    private List<Report> reports = new ArrayList<>();
 }

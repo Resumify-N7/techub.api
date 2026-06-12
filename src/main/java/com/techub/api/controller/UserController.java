@@ -2,7 +2,7 @@ package com.techub.api.controller;
 
 import com.techub.api.domain.User;
 import com.techub.api.dto.*;
-import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.exception.EmailAlreadyExistsException;
 import com.techub.api.exception.TokenExpiradoException;
 import com.techub.api.repository.UserRepository;
 import com.techub.api.service.JwtService;
@@ -66,7 +66,7 @@ public class UserController {
         } catch (TokenExpiradoException e) {
             String email = jwtService.extractEmailFromExpiredToken(token);
             if (email != null && userRepository.existsByEmail(email)) {
-                throw new EmailAlredyExistsExeception();
+                throw new EmailAlreadyExistsException();
             }
             throw e;
         }
