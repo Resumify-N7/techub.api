@@ -41,7 +41,7 @@ public class UserController {
     ) {
         try {
             PendingStudentRegistrationDTO dto = jwtService.extractPendingStudentRegistration(token);
-            userService.cadastrarAlunoViaConfirmacaoEmail(
+            User user = userService.cadastrarAlunoViaConfirmacaoEmail(
                     new UserCreateStudentRequestDTO(
                             dto.nome(),
                             dto.email(),
@@ -62,7 +62,18 @@ public class UserController {
                             + "; SameSite=None"
             );
 
-            return ResponseEntity.ok(new UserLoginResponse("Sucesso ao criar o token", sessionToken));
+            Long studentId   = user.getStudent()   != null ? user.getStudent().getId()   : null;
+            Long professorId = user.getProfessor()  != null ? user.getProfessor().getId() : null;
+
+            return ResponseEntity.ok(new UserLoginResponse(
+                    "Sucesso ao criar o token",
+                    sessionToken,
+                    true,
+                    user.getId(),
+                    studentId,
+                    professorId,
+                    user.getRole()
+            ));
         } catch (TokenExpiradoException e) {
             String email = jwtService.extractEmailFromExpiredToken(token);
             if (email != null && userRepository.existsByEmail(email)) {

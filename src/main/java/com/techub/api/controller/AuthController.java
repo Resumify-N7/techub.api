@@ -12,9 +12,9 @@ import com.techub.api.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
- import com.techub.api.dto.EsqueciSenhaRequestDTO;
- import com.techub.api.dto.RedefinirSenhaRequestDTO;
- import java.util.Map;
+import com.techub.api.dto.EsqueciSenhaRequestDTO;
+import com.techub.api.dto.RedefinirSenhaRequestDTO;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -51,7 +51,18 @@ public class AuthController {
                         "; SameSite=None"
         );
 
-        return ResponseEntity.ok(new UserLoginResponse("Sucesso ao criar o token", token));
+        Long studentId   = user.getStudent()   != null ? user.getStudent().getId()   : null;
+        Long professorId = user.getProfessor()  != null ? user.getProfessor().getId() : null;
+
+        return ResponseEntity.ok(new UserLoginResponse(
+                "Sucesso ao criar o token",
+                token,
+                true,
+                user.getId(),
+                studentId,
+                professorId,
+                user.getRole()
+        ));
     }
 
     @PostMapping("/logout")
