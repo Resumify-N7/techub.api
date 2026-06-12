@@ -2,7 +2,7 @@ package com.techub.api.seed;
 
 import com.techub.api.domain.Role;
 import com.techub.api.dto.ADMCreateRequestDTO;
-import com.techub.api.exception.EmailAlredyExistsExeception;
+import com.techub.api.exception.EmailAlreadyExistsException;
 import com.techub.api.repository.UserRepository;
 import com.techub.api.service.UserService;
 import org.springframework.boot.CommandLineRunner;
@@ -37,7 +37,7 @@ public class ADMSeedRunner implements CommandLineRunner {
 
        try {
            userService.cadastrarADM(new ADMCreateRequestDTO(email, senha, username));
-       } catch (EmailAlredyExistsExeception | DataIntegrityViolationException ignored) {
+       } catch (EmailAlreadyExistsException | DataIntegrityViolationException ignored) {
 
        }
     }

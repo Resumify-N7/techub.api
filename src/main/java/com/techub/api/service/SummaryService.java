@@ -6,6 +6,8 @@ import com.techub.api.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -104,6 +106,7 @@ public class SummaryService {
                 summary.getTitulo(), summary.getConteudo()
         );
     }
+
     @Transactional(readOnly = true)
     public List<SummaryGetResponseDTO> getAll(int limit) {
         return summaryRepository.findActive(PageRequest.of(0, Math.max(1, limit)))
@@ -111,9 +114,17 @@ public class SummaryService {
     }
 
     @Transactional(readOnly = true)
-    public FeedDTO findByAtivoTruePaged(int page, int size) {
-        Pageable pageable = PageRequest.of(page, Math.max(1, size));
-        Page<Summary> result = summaryRepository.findActivePublicOrderedByDate(pageable);
+    public FeedDTO findByAtivoTruePaged(int page, int size, String busca, Long subjectId, Long tagId, Integer semestre) {
+        Pageable pageable = PageRequest.of(page, Math.max(1, size), Sort.by(Sort.Direction.DESC, "datahora"));
+
+        Specification<Summary> spec = SummarySpecification.ativo()
+                .and(SummarySpecification.publico())
+                .and(SummarySpecification.comBusca(busca))
+                .and(SummarySpecification.comSubject(subjectId))
+                .and(SummarySpecification.comSemestre(semestre))
+                .and(SummarySpecification.comTag(tagId));
+
+        Page<Summary> result = summaryRepository.findAll(spec, pageable);
 
         return new FeedDTO(
                 result.getContent().stream().map(s -> toResponse(s, true)).toList(),
@@ -206,7 +217,7 @@ public class SummaryService {
         Summary existing = summaryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resumo não encontrado"));
 
-        Subject subject = subjectRepository.findById(dto.summaryId())
+        Subject subject = subjectRepository.findById(dto.subjectId())
                 .orElseThrow(() -> new RuntimeException("Erro ao encontrar a materia"));
 
         existing.getTagLinks().clear();

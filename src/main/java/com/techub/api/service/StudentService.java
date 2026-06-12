@@ -169,7 +169,6 @@ public class StudentService {
         studentRepository.save(student);
     }
 
-
     //mexe aqui isso que ta faltando
     public void trocarCurso(Long studentId, Long courseId) {
         Student student = resolveStudentByIdOrUserId(studentId);

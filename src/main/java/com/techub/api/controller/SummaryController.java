@@ -43,9 +43,13 @@ public class SummaryController {
     @GetMapping("/ativos")
     public ResponseEntity<FeedDTO> listarAtivos(
             @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false)    String busca,
+            @RequestParam(required = false)    Long subjectId,
+            @RequestParam(required = false)    Long tagId,
+            @RequestParam(required = false) Integer semestre
     ) {
-        return ResponseEntity.ok(service.findByAtivoTruePaged(page, size));
+        return ResponseEntity.ok(service.findByAtivoTruePaged(page, size, busca, subjectId, tagId, semestre));
     }
 
     @GetMapping("/ranking")

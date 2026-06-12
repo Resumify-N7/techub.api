@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.stream.Collectors;
 
@@ -20,8 +21,8 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(EmailAlredyExistsExeception.class)
-    public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlredyExistsExeception ex) {
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 new ErrorResponse(409, "EMAIL_ALREADY_EXISTS", ex.getMessage())
         );
@@ -83,6 +84,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handdleUserDesactivated(UserDesactivatedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 new ErrorResponse(401, "UNAUTHORIZED", ex.getMessage())
+        );
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(
+                new ErrorResponse(
+                        ex.getStatusCode().value(),
+                        "HTTP_ERROR",
+                        ex.getReason()
+                )
         );
     }
 
