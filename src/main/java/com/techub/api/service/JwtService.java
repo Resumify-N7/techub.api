@@ -39,6 +39,9 @@ public class JwtService {
     @Value("${EMAIL_CONFIRMATION_EXPIRATION_PROFESSOR}")
     private long pedingRegitrationProfessorExperation;
 
+    @Value("${PASSWORD_RESET_EXPIRATION:900000}")
+    private long passwordResetExpiration;
+
     public String generateToken(String email){
         return Jwts
                 .builder()
@@ -123,6 +126,40 @@ public class JwtService {
                 )
                 .signWith(getSignUpKey())
                 .compact();
+    }
+
+    public String generatePasswordResetToken(String email) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("type", "password-reset")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + passwordResetExpiration))
+                .signWith(getSignUpKey())
+                .compact();
+    }
+
+    public String extractEmailFromPasswordResetToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSignUpKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            String type = claims.get("type", String.class);
+            if (!"password-reset".equals(type)) {
+                throw new TokenInvalidoException("Token inválido para redefinição de senha.");
+            }
+
+            return claims.getSubject();
+
+        } catch (ExpiredJwtException e) {
+            throw new TokenExpiradoException("O link de redefinição expirou. Solicite um novo.");
+        } catch (TokenExpiradoException | TokenInvalidoException e) {
+            throw e;
+        } catch (JwtException e) {
+            throw new TokenInvalidoException("Token inválido ou malformado.");
+        }
     }
 
     private Claims extractPendingRegistrationClaims(String token) {

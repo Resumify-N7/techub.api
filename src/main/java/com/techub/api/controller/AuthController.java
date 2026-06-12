@@ -12,6 +12,9 @@ import com.techub.api.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+ import com.techub.api.dto.EsqueciSenhaRequestDTO;
+ import com.techub.api.dto.RedefinirSenhaRequestDTO;
+ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -73,5 +76,17 @@ public class AuthController {
         Long professorId = user.getProfessor()  != null ? user.getProfessor().getId() : null;
 
         return ResponseEntity.ok(new AuthResponse(true, user.getId(), studentId, professorId, user.getRole()));
+    }
+
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<?> esqueciSenha(@RequestBody EsqueciSenhaRequestDTO dto) {
+        authenticationService.solicitarRedefinicao(dto.email());
+        return ResponseEntity.ok(Map.of("message", "Se este email estiver cadastrado, você receberá as instruções em breve."));
+    }
+
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<?> redefinirSenha(@RequestBody RedefinirSenhaRequestDTO dto) {
+        authenticationService.redefinirSenha(dto.token(), dto.novaSenha());
+        return ResponseEntity.ok(Map.of("message", "Senha redefinida com sucesso."));
     }
 }
