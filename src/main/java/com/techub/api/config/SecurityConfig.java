@@ -44,6 +44,8 @@ public class SecurityConfig {
                .authorizeHttpRequests(auth -> auth
                       // .requestMatchers("/**").permitAll() ///  para testar TEMPORARIO
                        .requestMatchers("/auth/login").permitAll()
+                       .requestMatchers("/auth/esqueci-senha").permitAll()
+                       .requestMatchers("/auth/redefinir-senha").permitAll()
                        .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
                        .requestMatchers(HttpMethod.POST, "/user/**").permitAll()
                        .requestMatchers(HttpMethod.POST, "/adm/professor").permitAll()
