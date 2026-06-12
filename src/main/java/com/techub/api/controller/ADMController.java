@@ -1,6 +1,7 @@
 package com.techub.api.controller;
 
 import com.techub.api.domain.ADM;
+import com.techub.api.domain.User;
 import com.techub.api.dto.*;
 import com.techub.api.exception.EmailAlreadyExistsException;
 import com.techub.api.exception.TokenExpiradoException;
@@ -56,7 +57,7 @@ public class ADMController {
     ) {
         try {
             PendingProfessorRegistrationDTO dto = jwtService.extractPendingProfessorRegistration(token);
-            userService.cadastrarProfessorViaConfirmacaoEmail(dto);
+            User user = userService.cadastrarProfessorViaConfirmacaoEmail(dto);
 
             String sessionToken = jwtService.generateToken(dto.email());
             response.addHeader("Set-Cookie",
@@ -68,7 +69,18 @@ public class ADMController {
                             + "; SameSite=None"
             );
 
-            return ResponseEntity.ok(new UserLoginResponse("Professor cadastrado com sucesso", sessionToken));
+            Long studentId   = user.getStudent()   != null ? user.getStudent().getId()   : null;
+            Long professorId = user.getProfessor()  != null ? user.getProfessor().getId() : null;
+
+            return ResponseEntity.ok(new UserLoginResponse(
+                    "Professor cadastrado com sucesso",
+                    sessionToken,
+                    true,
+                    user.getId(),
+                    studentId,
+                    professorId,
+                    user.getRole()
+            ));
 
         } catch (TokenExpiradoException e) {
             String email = jwtService.extractEmailFromExpiredToken(token);

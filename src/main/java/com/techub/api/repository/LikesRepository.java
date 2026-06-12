@@ -19,14 +19,12 @@ public interface LikesRepository extends SoftDeleteRepository<Likes, Long> {
     long countBySummary(Summary summary);
 
     @Query("""
-        SELECT s.id, s.student.id, s.student.nome, a.url, s.titulo, s.conteudo, s.reports, s.publico, s.ativo, COUNT(l)
-        FROM Likes l
-        JOIN l.summary s
-        LEFT JOIN s.student st
-        LEFT JOIN st.avatar a
-        GROUP BY s.id, s.student.id, s.student.nome, a.url, s.titulo, s.conteudo, s.reports, s.publico, s.ativo
-        ORDER BY COUNT(l) DESC
-    """)
+    SELECT l.summary.id, COUNT(l)
+    FROM Likes l
+    WHERE l.summary.ativo = true AND l.summary.publico = true
+    GROUP BY l.summary.id
+    ORDER BY COUNT(l) DESC
+""")
     List<Object[]> findRanking();
 
     Page<Likes> findByStudentIdOrderByIdDesc(Long studentId, Pageable pageable);
